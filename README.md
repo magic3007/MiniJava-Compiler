@@ -16,10 +16,10 @@ The works are divided into five parts, each of which is a homework of the course
 We manage to achieve a minimal dependence. The tools used in this project are:
 
 - Gradle: a build-automation system
-- JavaCC: an open-source parser generator and lexical analyzer generator written in the Java
-- JTB: a syntax tree builder to be used with JavaCC
+- [JavaCC](https://javacc.github.io/javacc/): an open-source parser generator and lexical analyzer generator written in the Java
+- [JTB](http://compilers.cs.ucla.edu/jtb/): a syntax tree builder to be used with JavaCC
 
-## References
+## Resources
 
 - [UCLA CS132](http://web.cs.ucla.edu/~palsberg/course/cs132/project.html)
-
+- [Gettysburg CS 374](http://cs.gettysburg.edu/~tneller/cs374/)
