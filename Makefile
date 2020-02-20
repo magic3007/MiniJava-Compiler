@@ -8,6 +8,8 @@ JFLAGS = -g
 JTB = deps/jtb132.jar
 JAVACC = deps/javacc-7.0.5.jar
 
+default: javacc build
+
 javacc: cleanjavacc
 	mkdir $(SRC)/minijava
 
@@ -17,7 +19,6 @@ javacc: cleanjavacc
 		$(SRC)/minijava.jj
 	mv syntaxtree $(SRC)/minijava
 	mv visitor $(SRC)/minijava
-	echo 'abc' | sed 's/b/\'\n'/' 
 
 	awk '{ sub(/PARSER_BEGIN\(MiniJavaParser\)/,"&\n\
 		package minijava.parser;\n"); print }' \
@@ -31,12 +32,12 @@ cleanjavacc:
 	rm -rf syntaxtree vistor 
 	rm -rf src/minijava
 
-$(OUT)/HelloWorld.class: $(SRC)/HelloWorld.java
+build:
 	$(JAVAC) -d $(OUT) \
 		--source-path $(SRC) \
 		$(SRC)/HelloWorld.java
 
-run: $(OUT)/HelloWorld.class
+run:
 	$(JAVA) -cp $(OUT) HelloWorld
 
 clean: cleanjavacc
