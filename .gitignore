@@ -1,2 +1,9 @@
+# IntelliJ IDEA
+.idea/
+
+# vscode
+.vscode/
+
+
 out/
 src/minijava
