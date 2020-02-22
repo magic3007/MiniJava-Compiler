@@ -22,6 +22,12 @@ class ClassType extends Type {
 		String name;
 		Type returnType;
 		List<Type> paramTypes;
+		List<String> paramNames;
+
+		Method() {
+			paramTypes = new ArrayList<Type>();
+			paramNames = new ArrayList<String>();
+		}
 	}
 
 	List<Method> methods;
@@ -50,12 +56,41 @@ class ClassCollection {
 		return type;
 	}
 
+	String typeToName(Type type) {
+		if (type instanceof ClassType) {
+			return ((ClassType) type).name;
+		}
+		if (type instanceof IntType) {
+			return "int";
+		}
+		if (type instanceof BoolType) {
+			return "bool";
+		}
+		if (type instanceof ArrayType) {
+			return "int[]";
+		}
+		return this.getClass().getSimpleName();
+	}
+
+	void dump(ClassType.Method method) {
+		String rv = typeToName(method.returnType) + " ( ";
+		for (Type type : method.paramTypes) {
+			rv += typeToName(type) + " ";
+		}
+		rv += ")";
+		Info.debug("\t", rv);
+	}
+
 	void dump(ClassType type) {
 		String msg = type.name;
 		if (type.superclass != null) {
 			msg += " extends " + type.superclass.name;
 		}
 		Info.debug("class:", msg);
+
+		for (ClassType.Method method : type.methods) {
+			dump(method);
+		}
 	}
 
 	void dump() {
