@@ -111,8 +111,9 @@ class ScanClassMethods extends DepthFirstVisitor {
 		node.f1.accept(new GetTypeVisitor(classes, option));
 		method.returnType = (Type) option.value;
 		selfMethod = method;
-		node.f4.accept(this); // FormalParameterList ?
+		super.visit(node);
 		selfClass.methods.add(method);
+		selfMethod = null;
 	}
 
 	public void visit(FormalParameter node) {
@@ -120,9 +121,130 @@ class ScanClassMethods extends DepthFirstVisitor {
 		node.f0.accept(new GetTypeVisitor(classes, option));
 		Type type = (Type) option.value;
 		String name = node.f1.f0.tokenImage;
-		selfMethod.paramTypes.add(type);
-		selfMethod.paramNames.add(name);
+		selfMethod.param.types.add(type);
+		selfMethod.param.names.add(name);
 	}
+
+	public void visit(VarDeclaration node) {
+		Option option = new Option();
+		node.f0.accept(new GetTypeVisitor(classes, option));
+		Type type = (Type) option.value;
+		String name = node.f1.f0.tokenImage;
+		if (selfMethod != null) {
+			selfMethod.temp.types.add(type);
+			selfMethod.temp.names.add(name);
+		} else {
+			selfClass.field.types.add(type);
+			selfClass.field.names.add(name);
+		}
+	}
+}
+
+// pass 4: Check type
+
+abstract class AbstractGetExpressionType<T> extends GJNoArguDepthFirst<T> {}
+
+class GetExpressionType extends AbstractGetExpressionType<Type> {
+	GetExpressionType(ClassCollection classes) {
+		this.classes = classes;
+	}
+
+	ClassCollection classes;
+
+	public Type visit(Expression n) {
+		return n.f0.accept(this);
+	}
+
+	public Type visit(CompareExpression n) {
+		Type a = n.f0.accept(this);
+		Type b = n.f2.accept(this);
+		if (a instanceof IntType && b instanceof IntType) {
+			return new BoolType();
+		} else {
+			Info.panic("CompareExpression");
+			return null;
+		}
+	}
+
+	public Type visit(AndExpression n) {
+		Type a = n.f0.accept(this);
+		Type b = n.f2.accept(this);
+		if (a instanceof IntType && b instanceof IntType) {
+			return new BoolType();
+		} else {
+			Info.panic("AndExpression");
+			return null;
+		}
+	}
+
+	public Type visit(PlusExpression n) {
+		Type a = n.f0.accept(this);
+		Type b = n.f2.accept(this);
+		if (a instanceof IntType && b instanceof IntType) {
+			return new IntType();
+		} else {
+			Info.panic("PlusExpression");
+			return null;
+		}
+	}
+
+	public Type visit(MinusExpression n) {
+		Type a = n.f0.accept(this);
+		Type b = n.f2.accept(this);
+		if (a instanceof IntType && b instanceof IntType) {
+			return new IntType();
+		} else {
+			Info.panic("MinusExpression");
+			return null;
+		}
+	}
+
+	public Type visit(TimesExpression n) {
+		Type a = n.f0.accept(this);
+		Type b = n.f2.accept(this);
+		if (a instanceof IntType && b instanceof IntType) {
+			return new IntType();
+		} else {
+			Info.panic("TimesExpression");
+			return null;
+		}
+	} 
+
+	public Type visit(PrimaryExpression n) {
+		return n.f0.accept(this);
+	} 
+
+	public Type visit(ArrayLookup n) {
+		Type a = n.f0.accept(this);
+		Type b = n.f2.accept(this);
+		if (a instanceof ArrayType && b instanceof IntType) {
+			return new IntType();
+		} else {
+			Info.panic("ArrayLookup");
+			return null;
+		}
+	} 
+
+	public Type visit(ArrayLength n) {
+		Type a = n.f0.accept(this);
+		if (a instanceof ArrayType) {
+			return new IntType();
+		} else {
+			Info.panic("ArrayLookup");
+			return null;
+		}
+	}
+
+	public Type visit(MessageSend n) {
+		Type a = n.f0.accept(this);
+		if (!(a instanceof ClassType)) {
+			Info.panic("MessageSend");
+			return null;
+		}
+		String methodname = n.f2.f0.tokenImage;
+		// TODO: jqwo
+		return null;
+	} 
 }
 
 public class TypeCheck {

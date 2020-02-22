@@ -8,30 +8,86 @@ class BoolType extends PrimitiveType {}
 class IntType extends PrimitiveType {}
 class ArrayType extends PrimitiveType {}
 
+class VariableList {
+	List<Type> types;
+	List<String> names;
+
+	VariableList() {
+		types = new ArrayList<Type>();
+		names = new ArrayList<String>();
+	}
+
+	Type lookupByName(String name) {
+		int i = names.indexOf(name);
+		if (i >= 0) {
+			return types.get(i);
+		}
+		return null;
+	}
+}
+
 class ClassType extends Type {
 	ClassType(String name) {
 		this.name = name;
 		this.methods = new ArrayList<Method>();
+		this.field = new VariableList();
 	}
 
 	String name;
 	// null for no superclass
 	ClassType superclass;
 
+	VariableList field;
+
+	Type getTypeByName(String name) {
+		Type rv = field.lookupByName(name);
+		if (rv != null) return rv;
+
+		if (superclass == null) {
+			return null;
+		} else {
+			return superclass.getTypeByName(name);
+		}
+	}
+
+	Method getMethodByName(String name) {
+		for (Method method : methods) {
+			if (method.name.equals(name)) {
+				return method;
+			}
+		}
+
+		if (superclass == null) {
+			return null;
+		} else {
+			return superclass.getMethodByName(name);
+		}
+	}
+
 	class Method {
 		String name;
 		Type returnType;
-		List<Type> paramTypes;
-		List<String> paramNames;
 
-		List<Type> tempTypes;
-		List<String> tempNames;
+		VariableList param;
+		VariableList temp;
+
+		// TODO: check if paramNames conflit with tempNames
 
 		Method() {
-			paramTypes = new ArrayList<Type>();
-			paramNames = new ArrayList<String>();
-			tempTypes = new ArrayList<Type>();
-			tempNames = new ArrayList<String>();
+			param = new VariableList();
+			temp = new VariableList();
+		}
+
+		Type getTypeByName(String name) {
+			Type rv = null;
+
+			rv = temp.lookupByName(name);
+			if (rv != null) return rv;
+			rv = param.lookupByName(name);
+			if (rv != null) return rv;
+			
+			// call getTypeByName() in ClassType
+			return ClassType.this.getTypeByName(name);
 		}
 	}
 
@@ -77,7 +133,9 @@ class ClassCollection {
 		return this.getClass().getSimpleName();
 	}
 
-	String dump(List<Type> types, List<String> names) {
+	String dump(VariableList list) {
+		List<Type> types = list.types;
+		List<String> names = list.names;
 		String rv = "";
 		for (int i = 0; i < types.size(); i++) {
 			rv += typeToName(types.get(i)) + " " + names.get(i) + ", ";
@@ -87,8 +145,8 @@ class ClassCollection {
 
 	void dump(ClassType.Method method) {
 		String rv = typeToName(method.returnType) 
-			+ " ( " + dump(method.paramTypes, method.paramNames) + " )"
-			+ " - " + dump(method.tempTypes, method.tempNames);
+			+ " ( " + dump(method.param) + " )"
+			+ "\t- " + dump(method.temp);
 		Info.debug("\t", rv);
 	}
 
@@ -97,7 +155,7 @@ class ClassCollection {
 		if (type.superclass != null) {
 			msg += " extends " + type.superclass.name;
 		}
-		Info.debug("class:", msg);
+		Info.debug("class:", msg, "\t-", dump(type.field));
 
 		for (ClassType.Method method : type.methods) {
 			dump(method);
