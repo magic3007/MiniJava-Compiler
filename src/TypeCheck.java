@@ -135,6 +135,8 @@ public class TypeCheck {
 		root.accept(new ScanForSuperClassName(), classes);
 		root.accept(new ScanClassMethods(classes));
 		classes.dump();
+
+		System.out.println("Program type checked successfully");
 	}
 }
 

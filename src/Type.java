@@ -24,9 +24,14 @@ class ClassType extends Type {
 		List<Type> paramTypes;
 		List<String> paramNames;
 
+		List<Type> tempTypes;
+		List<String> tempNames;
+
 		Method() {
 			paramTypes = new ArrayList<Type>();
 			paramNames = new ArrayList<String>();
+			tempTypes = new ArrayList<Type>();
+			tempNames = new ArrayList<String>();
 		}
 	}
 
@@ -72,12 +77,18 @@ class ClassCollection {
 		return this.getClass().getSimpleName();
 	}
 
-	void dump(ClassType.Method method) {
-		String rv = typeToName(method.returnType) + " ( ";
-		for (Type type : method.paramTypes) {
-			rv += typeToName(type) + " ";
+	String dump(List<Type> types, List<String> names) {
+		String rv = "";
+		for (int i = 0; i < types.size(); i++) {
+			rv += typeToName(types.get(i)) + " " + names.get(i) + ", ";
 		}
-		rv += ")";
+		return rv;
+	}
+
+	void dump(ClassType.Method method) {
+		String rv = typeToName(method.returnType) 
+			+ " ( " + dump(method.paramTypes, method.paramNames) + " )"
+			+ " - " + dump(method.tempTypes, method.tempNames);
 		Info.debug("\t", rv);
 	}
 
