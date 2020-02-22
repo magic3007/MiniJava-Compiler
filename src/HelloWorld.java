@@ -1,9 +1,19 @@
 import minijava.parser.*;
+import minijava.visitor.GJNoArguDepthFirst;
+import minijava.syntaxtree.*;
+
+class Print extends GJNoArguDepthFirst {
+	public void MinusExpression(Expression n) {
+		System.out.println("-");
+	}
+}
 
 public class HelloWorld {
 	public static void main(String []args) throws Exception {
-		System.out.println("read the minijava code to be compiled from stdin:");
 		MiniJavaParser parser = new MiniJavaParser(System.in);
-		parser.Goal();
+		Node root = parser.Goal();
+		root.accept(new Print());
 	}
 }
+
+

@@ -35,9 +35,10 @@ cleanjavacc:
 build:
 	$(JAVAC) -d $(OUT) \
 		--source-path $(SRC) \
-		$(SRC)/HelloWorld.java
+		$(SRC)/*.java
+	$(JAVA) -cp $(OUT) TypeCheck < testcases/minijava/TreeVisitor.java
 
-run:
+run: build
 	$(JAVA) -cp $(OUT) HelloWorld
 
 clean: cleanjavacc
