@@ -147,6 +147,31 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	}
 
 	ClassCollection classes;
+	ClassType selfClass;
+	ClassType.Method selfMethod;
+
+	public Type visit(ClassDeclaration node) {
+		selfClass = classes.get(node.f1.f0.tokenImage);
+		return super.visit(node);
+	}
+
+	public Type visit(ClassExtendsDeclaration node) {
+		selfClass = classes.get(node.f1.f0.tokenImage);
+		return super.visit(node);
+	}
+
+	public Type visit(MethodDeclaration node) {
+		String name = node.f2.f0.tokenImage;
+		ClassType.Method method = selfClass.getMethodByName(name);
+		selfMethod = method;
+		super.visit(node);
+		selfMethod = null;
+
+		Type returnType = node.f10.accept(this);
+		typeCastCheck(returnType, method.returnType);
+
+		return null;
+	}
 
 	public Type visit(Expression n) {
 		return n.f0.accept(this);
@@ -232,16 +257,127 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		}
 	}
 
+	class GetExpressionListType extends AbstractGetExpressionType<List<Type>> {
+		public List<Type> visit(NodeOptional n) {
+			if (n.present())
+				return n.node.accept(this);
+			else
+				return new ArrayList<Type>();
+		}
+
+		public List<Type> visit(NodeListOptional n) {
+			List<Type> rv = new ArrayList<Type>();
+
+			if (! n.present()) {
+				return rv;
+			}
+
+			for (Enumeration<Node> e = n.elements(); e.hasMoreElements(); ) { 
+				Expression ee = (Expression) e.nextElement();
+				rv.add(ee.accept(GetExpressionType.this));
+			}
+			return rv;
+		}
+
+		public List<Type> visit(ExpressionList n) {
+			Expression e = (Expression) n.f0;
+			List<Type> rv = n.f1.accept(this);
+			// prepend |e|
+			rv.add(0, e.accept(GetExpressionType.this));
+			return rv;
+		}
+	}
+
+	void typeCastCheck(Type from, Type to) {
+		if (from instanceof PrimitiveType) {
+			if (! from.getClass().equals(to.getClass())) {
+				Info.panic("incompatible primitive type");
+			}
+		} else if (to instanceof PrimitiveType) {
+			Info.panic("cast ClassType to PrimitiveType");
+		} else {
+			ClassType a = (ClassType) from;
+			ClassType b = (ClassType) to;
+			while (a != null) {
+				if (a.name.equals(b.name)) {
+					return;
+				}
+				a = a.superclass;
+			}
+			Info.panic("cast to derived class failed");
+		}
+	}
+
 	public Type visit(MessageSend n) {
 		Type a = n.f0.accept(this);
 		if (!(a instanceof ClassType)) {
 			Info.panic("MessageSend");
 			return null;
 		}
+		ClassType ct = (ClassType) a;
 		String methodname = n.f2.f0.tokenImage;
-		// TODO: jqwo
-		return null;
+		ClassType.Method method = ct.getMethodByName(methodname);
+
+		List<Type> args = n.f4.accept(new GetExpressionListType());
+		int length = args.size();
+		if (length != method.param.size()) {
+			Info.panic("unequal number of arguments");
+		}
+
+		for (int i = 0; i < length; i++) {
+			typeCastCheck(args.get(i), method.param.get(i).type);
+		}
+
+		return method.returnType;
 	} 
+
+	public Type visit(IntegerLiteral n) {
+		return new IntType();
+	}
+
+	public Type visit(TrueLiteral n) {
+		return new BoolType();
+	}
+
+	public Type visit(FalseLiteral n) {
+		return new BoolType();
+	}
+
+	public Type visit(Identifier n) {
+		String name = n.f0.tokenImage;
+		Type type = selfMethod.getTypeByName(name);
+		return type;
+	}
+
+	public Type visit(ThisExpression n) {
+		return selfClass;
+	}
+
+	public Type visit(ArrayAllocationExpression n) {
+		Type a = n.f3.accept(this);
+		if (!(a instanceof IntType)) {
+			Info.panic("ArrayAllocationExpression");
+		}
+		return new ArrayType();
+	}
+
+	public Type visit(AllocationExpression n) {
+		String name = n.f1.f0.tokenImage;
+		ClassType type = classes.get(name);
+		return type;
+	}
+
+	public Type visit(NotExpression n) {
+		Type a = n.f1.accept(this);
+		if (!(a instanceof BoolType)) {
+			Info.panic("ArrayAllocationExpression");
+		}
+		return new BoolType();
+	}
+
+	public Type visit(BracketExpression n) {
+		return n.f1.accept(this);
+	}
 }
 
 public class TypeCheck {
@@ -254,6 +390,7 @@ public class TypeCheck {
 		root.accept(new ScanForSuperClassName(), classes);
 		root.accept(new ScanClassMethods(classes));
 		classes.dump();
+		root.accept(new GetExpressionType(classes));
 
 		System.out.println("Program type checked successfully");
 	}

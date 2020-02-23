@@ -19,11 +19,20 @@ class Variable {
 	}
 }
 
+// consider to extends the List
 class VariableList {
 	List<Variable> variables;
 
 	VariableList() {
 		variables = new ArrayList<Variable>();
+	}
+
+	int size() {
+		return variables.size();
+	}
+
+	Variable get(int index) {
+		return variables.get(index);
 	}
 
 	Type lookupByName(String name) {
@@ -58,6 +67,7 @@ class ClassType extends Type {
 		if (rv != null) return rv;
 
 		if (superclass == null) {
+			Info.panic("can not find symbol " + name);
 			return null;
 		} else {
 			return superclass.getTypeByName(name);
@@ -72,6 +82,7 @@ class ClassType extends Type {
 		}
 
 		if (superclass == null) {
+			Info.panic("can not find method", name);
 			return null;
 		} else {
 			return superclass.getMethodByName(name);
