@@ -411,6 +411,8 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		if (!(a instanceof BoolType)) {
 			Info.panic("IfStatement condition is not a BoolType");
 		}
+		n.f4.accept(this);
+		n.f6.accept(this);
 		return null;
 	}
 
@@ -419,6 +421,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		if (!(a instanceof BoolType)) {
 			Info.panic("IfStatement condition is not a BoolType");
 		}
+		n.f4.accept(this);
 		return null;
 	}
 
