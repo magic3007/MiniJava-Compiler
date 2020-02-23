@@ -217,7 +217,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	public Type visit(AndExpression n) {
 		Type a = n.f0.accept(this);
 		Type b = n.f2.accept(this);
-		if (a instanceof IntType && b instanceof IntType) {
+		if (a instanceof BoolType && b instanceof BoolType) {
 			return new BoolType();
 		} else {
 			Info.panic("AndExpression");
