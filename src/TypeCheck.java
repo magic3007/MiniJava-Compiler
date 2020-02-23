@@ -15,7 +15,8 @@ class Info {
 	static void panic(String... msg) {
 		dump(msg);
 		System.out.println("Type error");
-		System.exit(0);
+		throw new RuntimeException("DEBUG");
+		// System.exit(0);
 	}
 
 	static void debug(String... msg) {
@@ -399,6 +400,29 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 
 	public Type visit(BracketExpression n) {
 		return n.f1.accept(this);
+	}
+
+	public Type visit(IfStatement n) {
+		Type a = n.f2.accept(this);
+		if (!(a instanceof BoolType)) {
+			Info.panic("IfStatement condition is not a BoolType");
+		}
+		return null;
+	}
+
+	public Type visit(WhileStatement n) {
+		Type a = n.f2.accept(this);
+		if (!(a instanceof BoolType)) {
+			Info.panic("IfStatement condition is not a BoolType");
+		}
+		return null;
+	}
+
+	public Type visit(AssignmentStatement n) {
+		Type a = n.f0.accept(this);
+		Type b = n.f2.accept(this);
+		typeCastCheck(b, a);
+		return null;
 	}
 }
 
