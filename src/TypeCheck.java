@@ -168,24 +168,30 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 
 	public Type visit(ClassDeclaration node) {
 		selfClass = classes.get(node.f1.f0.tokenImage);
-		return super.visit(node);
+		return node.f4.accept(this);
 	}
 
 	public Type visit(ClassExtendsDeclaration node) {
 		selfClass = classes.get(node.f1.f0.tokenImage);
-		return super.visit(node);
+		return node.f6.accept(this);
 	}
 
 	public Type visit(MethodDeclaration node) {
 		String name = node.f2.f0.tokenImage;
 		ClassType.Method method = selfClass.getMethodByName(name);
 		selfMethod = method;
-		super.visit(node);
-		selfMethod = null;
-
+		node.f8.accept(this);
 		Type returnType = node.f10.accept(this);
 		typeCastCheck(returnType, method.returnType);
+		selfMethod = null;
 
+		return null;
+	}
+
+	public Type visit(MainClass node) {
+		selfClass = classes.get(node.f1.f0.tokenImage);
+		selfMethod = selfClass.getMethodByName("main");
+		node.f15.accept(this);
 		return null;
 	}
 
