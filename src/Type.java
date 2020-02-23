@@ -12,7 +12,7 @@ class Type {
 		if (type instanceof BoolType) {
 			return "bool";
 		}
-		if (type instanceof ArrayType) {
+		if (type instanceof ArrType) {
 			return "int[]";
 		}
 		if (type instanceof VoidType) {
@@ -26,7 +26,7 @@ class PrimitiveType extends Type {}
 
 class BoolType extends PrimitiveType {}
 class IntType extends PrimitiveType {}
-class ArrayType extends PrimitiveType {}
+class ArrType extends PrimitiveType {}
 class VoidType extends PrimitiveType {}
 
 

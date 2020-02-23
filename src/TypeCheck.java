@@ -83,7 +83,7 @@ class GetTypeVisitor extends DepthFirstVisitor {
 	}
 
 	public void visit(ArrayType node) {
-		option.value = new ArrayType();
+		option.value = new ArrType();
 	}
 
 	public void visit(Identifier node) {
@@ -265,7 +265,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	public Type visit(ArrayLookup n) {
 		Type a = n.f0.accept(this);
 		Type b = n.f2.accept(this);
-		if (a instanceof ArrayType && b instanceof IntType) {
+		if (a instanceof ArrType && b instanceof IntType) {
 			return new IntType();
 		} else {
 			Info.panic("ArrayLookup");
@@ -275,7 +275,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 
 	public Type visit(ArrayLength n) {
 		Type a = n.f0.accept(this);
-		if (a instanceof ArrayType) {
+		if (a instanceof ArrType) {
 			return new IntType();
 		} else {
 			Info.panic("ArrayLookup");
@@ -385,7 +385,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		if (!(a instanceof IntType)) {
 			Info.panic("ArrayAllocationExpression");
 		}
-		return new ArrayType();
+		return new ArrType();
 	}
 
 	public Type visit(AllocationExpression n) {
