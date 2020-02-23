@@ -296,8 +296,8 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 			}
 
 			for (Enumeration<Node> e = n.elements(); e.hasMoreElements(); ) { 
-				Expression ee = (Expression) e.nextElement();
-				rv.add(ee.accept(GetExpressionType.this));
+				ExpressionRest ee = (ExpressionRest) e.nextElement();
+				rv.add(ee.f1.accept(GetExpressionType.this));
 			}
 			return rv;
 		}
@@ -314,10 +314,10 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	void typeCastCheck(Type from, Type to) {
 		if (from instanceof PrimitiveType) {
 			if (! from.getClass().equals(to.getClass())) {
-				Info.panic("incompatible primitive type");
+				Info.panic("incompatible primitive type " + from + " -> " + to);
 			}
 		} else if (to instanceof PrimitiveType) {
-			Info.panic("cast ClassType to PrimitiveType");
+			Info.panic("cast ClassType to PrimitiveType " + from + " -> " + to);
 		} else {
 			ClassType a = (ClassType) from;
 			ClassType b = (ClassType) to;
@@ -327,7 +327,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 				}
 				a = a.superclass;
 			}
-			Info.panic("cast to derived class failed");
+			Info.panic("cast to derived class failed " + from + " -> " + to);
 		}
 	}
 
@@ -344,7 +344,8 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		List<Type> args = n.f4.accept(new GetExpressionListType());
 		int length = args.size();
 		if (length != method.param.size()) {
-			Info.panic("unequal number of arguments");
+			Info.panic("unequal number of arguments " 
+				+ length + " -> " + method.param.size());
 		}
 
 		for (int i = 0; i < length; i++) {

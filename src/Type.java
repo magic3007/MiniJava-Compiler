@@ -1,6 +1,26 @@
 import java.util.*;
 
-class Type {}
+class Type {
+	public String toString() {
+		Type type = this;
+		if (type instanceof ClassType) {
+			return ((ClassType) type).name;
+		}
+		if (type instanceof IntType) {
+			return "int";
+		}
+		if (type instanceof BoolType) {
+			return "bool";
+		}
+		if (type instanceof ArrayType) {
+			return "int[]";
+		}
+		if (type instanceof VoidType) {
+			return "void";
+		}
+		return this.getClass().getSimpleName();
+	}
+}
 
 class PrimitiveType extends Type {}
 
@@ -145,35 +165,16 @@ class ClassCollection {
 		return type;
 	}
 
-	String typeToName(Type type) {
-		if (type instanceof ClassType) {
-			return ((ClassType) type).name;
-		}
-		if (type instanceof IntType) {
-			return "int";
-		}
-		if (type instanceof BoolType) {
-			return "bool";
-		}
-		if (type instanceof ArrayType) {
-			return "int[]";
-		}
-		if (type instanceof VoidType) {
-			return "null";
-		}
-		return this.getClass().getSimpleName();
-	}
-
 	String dump(VariableList list) {
 		String rv = "";
 		for (Variable variable : list.variables) {
-			rv += typeToName(variable.type) + " " + variable.name + ", ";
+			rv += variable.type + " " + variable.name + ", ";
 		}
 		return rv;
 	}
 
 	void dump(ClassType.Method method) {
-		String rv = typeToName(method.returnType) 
+		String rv = method.returnType 
 			+ " ( " + dump(method.param) + " )"
 			+ "\t- " + dump(method.temp);
 		Info.debug("\t", rv);
