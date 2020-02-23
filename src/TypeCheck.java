@@ -121,8 +121,7 @@ class ScanClassMethods extends DepthFirstVisitor {
 		node.f0.accept(new GetTypeVisitor(classes, option));
 		Type type = (Type) option.value;
 		String name = node.f1.f0.tokenImage;
-		selfMethod.param.types.add(type);
-		selfMethod.param.names.add(name);
+		selfMethod.param.add(type, name);
 	}
 
 	public void visit(VarDeclaration node) {
@@ -131,11 +130,9 @@ class ScanClassMethods extends DepthFirstVisitor {
 		Type type = (Type) option.value;
 		String name = node.f1.f0.tokenImage;
 		if (selfMethod != null) {
-			selfMethod.temp.types.add(type);
-			selfMethod.temp.names.add(name);
+			selfMethod.temp.add(type, name);
 		} else {
-			selfClass.field.types.add(type);
-			selfClass.field.names.add(name);
+			selfClass.field.add(type, name);
 		}
 	}
 }

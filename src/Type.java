@@ -8,21 +8,35 @@ class BoolType extends PrimitiveType {}
 class IntType extends PrimitiveType {}
 class ArrayType extends PrimitiveType {}
 
+
+class Variable {
+	Type type;
+	String name;
+
+	Variable(Type type, String name) {
+		this.type = type;
+		this.name = name;
+	}
+}
+
 class VariableList {
-	List<Type> types;
-	List<String> names;
+	List<Variable> variables;
 
 	VariableList() {
-		types = new ArrayList<Type>();
-		names = new ArrayList<String>();
+		variables = new ArrayList<Variable>();
 	}
 
 	Type lookupByName(String name) {
-		int i = names.indexOf(name);
-		if (i >= 0) {
-			return types.get(i);
+		for (Variable variable : variables) {
+			if (variable.name.equals(name)) {
+				return variable.type;
+			}
 		}
 		return null;
+	}
+
+	void add(Type type, String name) {
+		variables.add(new Variable(type, name));
 	}
 }
 
@@ -134,11 +148,9 @@ class ClassCollection {
 	}
 
 	String dump(VariableList list) {
-		List<Type> types = list.types;
-		List<String> names = list.names;
 		String rv = "";
-		for (int i = 0; i < types.size(); i++) {
-			rv += typeToName(types.get(i)) + " " + names.get(i) + ", ";
+		for (Variable variable : list.variables) {
+			rv += typeToName(variable.type) + " " + variable.name + ", ";
 		}
 		return rv;
 	}
