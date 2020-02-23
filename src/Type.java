@@ -7,6 +7,7 @@ class PrimitiveType extends Type {}
 class BoolType extends PrimitiveType {}
 class IntType extends PrimitiveType {}
 class ArrayType extends PrimitiveType {}
+class VoidType extends PrimitiveType {}
 
 
 class Variable {
@@ -116,6 +117,8 @@ class ClassType extends Type {
 		}
 	}
 
+	class StaticMethod extends Method {}
+
 	List<Method> methods;
 }
 
@@ -154,6 +157,9 @@ class ClassCollection {
 		}
 		if (type instanceof ArrayType) {
 			return "int[]";
+		}
+		if (type instanceof VoidType) {
+			return "null";
 		}
 		return this.getClass().getSimpleName();
 	}

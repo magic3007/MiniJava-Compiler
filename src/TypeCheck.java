@@ -34,6 +34,10 @@ class ScanForClassName<T extends ClassCollection> extends GJVoidDepthFirst<T> {
 		// the class name
 		classes.add(node.f1.f0.tokenImage);
 	}
+
+	public void visit(MainClass node, T classes) {
+		classes.add(node.f1.f0.tokenImage);
+	}
 }
 
 // 2nd pass:
@@ -134,6 +138,18 @@ class ScanClassMethods extends DepthFirstVisitor {
 		} else {
 			selfClass.field.add(type, name);
 		}
+	}
+
+	public void visit(MainClass node) {
+		selfClass = classes.get(node.f1.f0.tokenImage);
+		ClassType.Method method = selfClass.new StaticMethod();
+		method.name = "main";
+		method.returnType = new VoidType();
+		method.param.add(new VoidType(), node.f11.f0.tokenImage);
+		selfMethod = method;
+		super.visit(node);
+		selfClass.methods.add(method);
+		selfMethod = null;
 	}
 }
 
