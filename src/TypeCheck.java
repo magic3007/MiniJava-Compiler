@@ -4,19 +4,22 @@ import minijava.syntaxtree.*;
 import java.util.*;
 
 class Info {
-	static void dump(String... msg) {
-		for (String m : msg) {
-			System.out.print(m);
-			System.out.print(" ");
+	private static void dump(String... msg) {
+		if (true) {
+			// pass
+		} else {
+			for (String m : msg) {
+				System.out.print(m);
+				System.out.print(" ");
+			}
+			System.out.println();
 		}
-		System.out.println();
 	}
 
 	static void panic(String... msg) {
 		dump(msg);
 		System.out.println("Type error");
 		throw new RuntimeException("DEBUG");
-		// System.exit(0);
 	}
 
 	static void debug(String... msg) {
@@ -425,19 +428,32 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		typeCastCheck(b, a);
 		return null;
 	}
+
+	public Type visit(PrintStatement n) {
+		Type a = n.f2.accept(this);
+		if (!(a instanceof IntType)) {
+			Info.panic("can not print " + a);
+		}
+		return null;
+	}
 }
 
 public class TypeCheck {
-	public static void main(String []args) throws Exception {
-		MiniJavaParser parser = new MiniJavaParser(System.in);
-		ClassCollection classes = new ClassCollection();
-		Node root = parser.Goal();
 
-		root.accept(new ScanForClassName(), classes);
-		root.accept(new ScanForSuperClassName(), classes);
-		root.accept(new ScanClassMethods(classes));
-		classes.dump();
-		root.accept(new GetExpressionType(classes));
+	public static void main(String []args) {
+		try {
+			MiniJavaParser parser = new MiniJavaParser(System.in);
+			ClassCollection classes = new ClassCollection();
+			Node root = parser.Goal();
+
+			root.accept(new ScanForClassName(), classes);
+			root.accept(new ScanForSuperClassName(), classes);
+			root.accept(new ScanClassMethods(classes));
+			classes.dump();
+			root.accept(new GetExpressionType(classes));
+		} catch (Exception e) {
+			System.exit(0);
+		}
 
 		System.out.println("Program type checked successfully");
 	}

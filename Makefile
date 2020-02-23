@@ -45,3 +45,21 @@ clean: cleanjavacc
 	rm -rf out
 
 
+TEST_MJ_DIR = testcases/minijava
+TEST_MJ     = $(wildcard $(TEST_MJ_DIR)/*.java)
+TEST_MJ_OUT = $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
+
+test: $(TEST_MJ_OUT)
+	echo done!
+
+%.testmj: $(TEST_MJ_DIR)/%.java
+	@sh -c '$(JAVAC) -d $(OUT)/minijava $< &>/dev/null';\
+	EXIT_CODE=$$?;\
+	if [ $$EXIT_CODE -eq 0 ] ; \
+		then echo "Program type checked successfully" > $(OUT)/std.output; \
+		else echo "Type error" > $(OUT)/std.output; fi; 
+	$(JAVA) -cp $(OUT) TypeCheck < $< > $(OUT)/my.output
+	diff $(OUT)/std.output $(OUT)/my.output
+	@echo ========= passed! $< ==========
+
+
