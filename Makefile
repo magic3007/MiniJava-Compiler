@@ -67,7 +67,8 @@ test: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 	@diff $(OUT)/std.output $(OUT)/my.output
 	@echo [TypeCheck] passed! $<
 	@if [ -e $(OUT)/minijava/$*.class ]; then \
-		$(JAVA) -cp $(OUT)/minijava $* > $(OUT)/std.output; \
+		$(JAVA) -cp $(OUT)/minijava $* > $(OUT)/std.output 2>/dev/null; \
+		if [ $$? -ne 0 ] ; then echo "ERROR" >> $(OUT)/std.output; fi; \
 		$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -jar $(PGI) > $(OUT)/my.output;\
 		diff $(OUT)/std.output $(OUT)/my.output && \
 		echo "[   J2P   ] passed!" $<;\
