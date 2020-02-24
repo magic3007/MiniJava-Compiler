@@ -51,8 +51,16 @@ class Info {
 	}
 
 	static void emitFlush() {
-		emit(buf.toArray(new String[0]));
+		if (buf.size() == 0) {
+			return;
+		}
+		String[] args = buf.toArray(new String[0]);
 		buf.clear();
+		emit(args);
+	}
+
+	static String numToOffset(int num) {
+		return Integer.toString(num * 4);
 	}
 
 	static void emitOpen(String... msg) {
@@ -68,20 +76,26 @@ class Info {
 	}
 
 	static void emit(String... msg) {
+		if (msg.length == 0) {
+			return;
+		}
+		if (buf.size() != 0) {
+			panic("emit error");
+		}
 		for (int i = 0; i < indentNum; i++) {
-			dd("  ");
+			dd("    ");
 		}
 		dump(msg);
 	}
 
-	static private int labelNum = 0;
+	static private int labelNum = 100;
 
 	static String newLabel() {
 		labelNum += 1;
 		return "L" + labelNum;
 	}
 
-	static private int tempNum = 100;
+	static private int tempNum = 200;
 
 	static String newTemp() {
 		tempNum += 1;

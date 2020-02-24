@@ -135,8 +135,22 @@ class ClassType extends Type {
 		Info.emit("BEGIN", 
 			"HLOAD", tmp, "TEMP 0", 
 				// extra 1 for the virtual table
-				Integer.toString(1 + rv + sizeOfSuperClasses),
+				Info.numToOffset(1 + rv + sizeOfSuperClasses),
 			"RETURN", tmp, "END", "//", this.name, ".", name);	
+	}
+
+	void emitAssignByName(String name) {
+		int rv = field.indexOf(name);
+		if (rv < 0) {
+			if (superclass == null) {
+				Info.panic("can not find field", name);
+			} else {
+				superclass.emitAssignByName(name);
+				return;
+			}
+		}
+		Info.emitBuf("HSTORE", "TEMP 0", 
+			Info.numToOffset(1 + rv + sizeOfSuperClasses));
 	}
 
 	class Method {
@@ -165,22 +179,41 @@ class ClassType extends Type {
 			return ClassType.this.getTypeByName(name);
 		}
 
-		void emitByName(String name) {
+		private int getTempAddressIndex(String name) {
 			int rv;
 
 			rv = param.indexOf(name);
 			// the extra 1 is for `this` parameter
 			if (rv >= 0) {
-				Info.emitBuf("TEMP", Integer.toString(rv) + 1);
-				return;
+				return rv + 1;
 			}
 			rv = temp.indexOf(name);
 			if (rv >= 0) {
-				Info.emitBuf("TEMP", Integer.toString(param.size() + rv + 1));
+				return param.size() + rv + 1;
+			}
+			return -1;
+		}
+
+		void emitByName(String name) {
+			int rv;
+
+			rv = getTempAddressIndex(name);
+			if (rv >= 0) {
+				Info.emitBuf("TEMP", Integer.toString(rv));
 				return;
 			}
-
 			ClassType.this.emitByName(name);
+		}
+
+		void emitAssignByName(String name) {
+			int rv;
+
+			rv = getTempAddressIndex(name);
+			if (rv >= 0) {
+				Info.emitBuf("MOEV", "TEMP", Integer.toString(rv));
+				return;
+			}
+			ClassType.this.emitAssignByName(name);
 		}
 
 		String getLabel() {
