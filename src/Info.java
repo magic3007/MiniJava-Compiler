@@ -1,3 +1,4 @@
+import java.io.PrintStream;
 import java.util.*;
 
 class Info {
@@ -47,6 +48,8 @@ class Emitter {
 	private List<String> buf = new LinkedList<String>();
 	boolean mute = true;
 
+	java.io.PrintStream out = System.out;
+
 	Emitter() {}
 
 	Emitter(boolean mute) {
@@ -95,9 +98,13 @@ class Emitter {
 			Info.panic("emit error");
 		}
 		for (int i = 0; i < indentNum; i++) {
-			Info.dd("    ");
+			out.print("\t");
 		}
-		Info.dump(msg);
+		for (String m : msg) {
+			out.print(m);
+			out.print(" ");
+		}
+		out.println();
 	}
 
 	private int labelNum = 100;

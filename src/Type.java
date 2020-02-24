@@ -210,14 +210,14 @@ class ClassType extends Type {
 
 			rv = getTempAddressIndex(name);
 			if (rv >= 0) {
-				e.emitBuf("MOEV", "TEMP", Integer.toString(rv));
+				e.emitBuf("MOVE", "TEMP", Integer.toString(rv));
 				return;
 			}
 			ClassType.this.emitAssignByName(e, name);
 		}
 
 		String getLabel() {
-			return ClassType.this.name + name;
+			return ClassType.this.name + "_" + name;
 		}
 
 		int numOfParams() {
@@ -255,6 +255,14 @@ class ClassType extends Type {
 		return -1;
 	}
 
+	int sizeOfClass() {
+		return sizeOfSuperClasses + field.size();
+	}
+
+	int sizeOfTable() {
+		return dynamicMethods.size();
+	}
+
 	void analyze() {
 		// if have been analyzed
 		if (!(dynamicMethods == null)) {
@@ -263,8 +271,7 @@ class ClassType extends Type {
 
 		if (superclass != null) {
 			superclass.analyze();
-			sizeOfSuperClasses = superclass.sizeOfSuperClasses 
-				+ superclass.field.size();
+			sizeOfSuperClasses = superclass.sizeOfClass();
 			dynamicMethods = new ArrayList<Method>(superclass.dynamicMethods);
 		} else {
 			sizeOfSuperClasses = 0;
