@@ -674,6 +674,7 @@ public class TypeCheck {
 			try {
 				TypeCheck(e);	
 			} catch (Exception e_) {
+				System.out.println("Type error");
 				System.exit(0);
 			}
 		}
