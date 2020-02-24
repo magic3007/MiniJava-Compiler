@@ -408,6 +408,18 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		return null;
 	}
 
+	public Type visit(ArrayAssignmentStatement n) {
+		Type a = n.f0.accept(this);
+		Type b = n.f2.accept(this);
+		Type c = n.f5.accept(this);
+		if (!(a instanceof ArrType
+			&& b instanceof IntType
+			&& c instanceof IntType)) {
+			Info.panic("ArrayAssignmentStatement");
+		}
+		return null;
+	}
+
 	public Type visit(PrintStatement n) {
 		Type a = n.f2.accept(this);
 		if (!(a instanceof IntType)) {
