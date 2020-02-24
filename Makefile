@@ -38,7 +38,7 @@ build: parser
 	$(JAVAC) -d $(OUT) \
 		--source-path $(SRC) \
 		$(SRC)/*.java
-	$(JAVA) -cp $(OUT) TypeCheck < testcases/minijava/TreeVisitor.java
+	$(JAVA) -cp $(OUT) J2P < testcases/minijava/Factorial.java
 
 run: build
 	$(JAVA) -cp $(OUT) HelloWorld

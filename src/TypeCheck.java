@@ -417,9 +417,18 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	}
 }
 
-public class TypeCheck {
+class TypeCheckResult {
+	ClassCollection classes;
+	Node root;
 
-	static Node TypeCheck() throws Exception {
+	TypeCheckResult(ClassCollection classes, Node root) {
+		this.classes = classes;
+		this.root = root;
+	}
+}
+
+public class TypeCheck {
+	static TypeCheckResult TypeCheck() throws Exception {
 		MiniJavaParser parser = new MiniJavaParser(System.in);
 		ClassCollection classes = new ClassCollection();
 		Node root = parser.Goal();
@@ -429,7 +438,7 @@ public class TypeCheck {
 		root.accept(new ScanClassMethods(classes));
 		classes.dump();
 		root.accept(new GetExpressionType(classes));
-		return root;
+		return new TypeCheckResult(classes, root);
 	}
 
 	public static void main(String []args) throws Exception {

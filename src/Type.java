@@ -56,6 +56,15 @@ class VariableList {
 		return variables.get(index);
 	}
 
+	int indexOf(String name) {
+		for (int i = 0; i < variables.size(); i++) {
+			if (variables.get(i).name.equals(name)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 	Type lookupByName(String name) {
 		for (Variable variable : variables) {
 			if (variable.name.equals(name)) {
@@ -140,6 +149,59 @@ class ClassType extends Type {
 	class StaticMethod extends Method {}
 
 	List<Method> methods;
+
+	// the fileds and methods belower are for code generation
+
+	List<Method> dynamicMethods;
+	int sizeOfSuperClasses;
+
+	int indexOfField(String name) {
+		int rv = field.indexOf(name);
+		if (rv >= 0) {
+			return sizeOfSuperClasses + rv;
+		}
+
+		if (superclass == null) {
+			Info.panic("can not find " + name);
+		}
+		return superclass.indexOfField(name);
+	}
+
+	int indexOfMethod(String name) {
+		for (int i = 0; i < dynamicMethods.size(); i++) {
+			if (dynamicMethods.get(i).name.equals(name)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	void analyze() {
+		// if have been analyzed
+		if (!(dynamicMethods == null)) {
+			return;
+		}
+
+		if (superclass != null) {
+			superclass.analyze();
+			sizeOfSuperClasses = superclass.sizeOfSuperClasses 
+				+ superclass.field.size();
+			dynamicMethods = new ArrayList<Method>(superclass.dynamicMethods);
+		} else {
+			sizeOfSuperClasses = 0;
+			dynamicMethods = new ArrayList<Method>();
+		}
+
+		for (Method method : methods) {
+			int i = indexOfMethod(method.name);
+			if (i < 0) {
+				dynamicMethods.add(method);
+			} else {
+				// override the superclass's method
+				dynamicMethods.set(i, method);
+			}
+		}
+	}
 }
 
 class ClassCollection {
@@ -155,6 +217,12 @@ class ClassCollection {
 		}
 
 		collection.put(name, new ClassType(name));
+	}
+
+	void analyze() {
+		for (ClassType c : collection.values()) {
+			c.analyze();
+		}
 	}
 
 	ClassType get(String name) {
@@ -187,8 +255,14 @@ class ClassCollection {
 		}
 		Info.debug("class:", msg, "\t-", dump(type.field));
 
-		for (ClassType.Method method : type.methods) {
-			dump(method);
+		if (type.dynamicMethods != null) {
+			for (ClassType.Method method : type.dynamicMethods) {
+				dump(method);
+			}
+		} else {
+			for (ClassType.Method method : type.methods) {
+				dump(method);
+			}
 		}
 	}
 
