@@ -1,9 +1,9 @@
 import java.util.*;
 
 class Info {
-	static final boolean DEBUG = true;
+	static final boolean DEBUG = false;
 
-	private static void dd(String s) {
+	static void dd(String s) {
 		if (! DEBUG) {
 			// pass
 		} else {
@@ -11,7 +11,7 @@ class Info {
 		}
 	}
 
-	private static void dln() {
+	static void dln() {
 		if (! DEBUG) {
 			// pass
 		} else {
@@ -19,7 +19,7 @@ class Info {
 		}
 	}
 
-	private static void dump(String... msg) {
+	static void dump(String... msg) {
 		if (! DEBUG) {
 			// pass
 		} else {
@@ -40,17 +40,26 @@ class Info {
 	static void debug(String... msg) {
 		dump(msg);
 	}
+}
 
-	static private int indentNum = 0;
-	static private List<String> buf = new LinkedList<String>();
+class Emitter {
+	private int indentNum = 0;
+	private List<String> buf = new LinkedList<String>();
+	boolean mute = true;
 
-	static void emitBuf(String... msg) {
+	Emitter() {}
+
+	Emitter(boolean mute) {
+		this.mute = mute;
+	}
+
+	void emitBuf(String... msg) {
 		for (String m : msg) {
 			buf.add(m);
 		}
 	}
 
-	static void emitFlush() {
+	void emitFlush() {
 		if (buf.size() == 0) {
 			return;
 		}
@@ -59,46 +68,52 @@ class Info {
 		emit(args);
 	}
 
-	static String numToOffset(int num) {
+	String numToOffset(int num) {
 		return Integer.toString(num * 4);
 	}
 
-	static void emitOpen(String... msg) {
+	void emitOpen(String... msg) {
 		emitFlush();
 		emit(msg);
 		indentNum += 1;
 	}
 
-	static void emitClose(String... msg) {
+	void emitClose(String... msg) {
 		emitFlush();
 		indentNum -= 1;
 		emit(msg);
 	}
 
-	static void emit(String... msg) {
+	void emit(String... msg) {
+		if (mute) {
+			return;
+		}
 		if (msg.length == 0) {
 			return;
 		}
 		if (buf.size() != 0) {
-			panic("emit error");
+			Info.panic("emit error");
 		}
 		for (int i = 0; i < indentNum; i++) {
-			dd("    ");
+			Info.dd("    ");
 		}
-		dump(msg);
+		Info.dump(msg);
 	}
 
-	static private int labelNum = 100;
+	private int labelNum = 100;
 
-	static String newLabel() {
+	String newLabel() {
 		labelNum += 1;
 		return "L" + labelNum;
 	}
 
-	static private int tempNum = 200;
+	private int tempNum = 200;
 
-	static String newTemp() {
+	String newTemp() {
 		tempNum += 1;
 		return "TEMP " + tempNum;
 	}
 }
+
+
+

@@ -119,38 +119,38 @@ class ClassType extends Type {
 		}
 	}
 
-	void emitByName(String name) {
+	void emitByName(Emitter e, String name) {
 		int rv = field.indexOf(name);
 		if (rv < 0) {
 			if (superclass == null) {
 				Info.panic("can not find field", name);
 			} else {
-				superclass.emitByName(name);
+				superclass.emitByName(e, name);
 				return;
 			}
 		}
 
-		Info.emitFlush();
-		String tmp = Info.newTemp();
-		Info.emit("BEGIN", 
+		e.emitFlush();
+		String tmp = e.newTemp();
+		e.emit("BEGIN", 
 			"HLOAD", tmp, "TEMP 0", 
 				// extra 1 for the virtual table
-				Info.numToOffset(1 + rv + sizeOfSuperClasses),
+				e.numToOffset(1 + rv + sizeOfSuperClasses),
 			"RETURN", tmp, "END", "//", this.name, ".", name);	
 	}
 
-	void emitAssignByName(String name) {
+	void emitAssignByName(Emitter e, String name) {
 		int rv = field.indexOf(name);
 		if (rv < 0) {
 			if (superclass == null) {
 				Info.panic("can not find field", name);
 			} else {
-				superclass.emitAssignByName(name);
+				superclass.emitAssignByName(e, name);
 				return;
 			}
 		}
-		Info.emitBuf("HSTORE", "TEMP 0", 
-			Info.numToOffset(1 + rv + sizeOfSuperClasses));
+		e.emitBuf("HSTORE", "TEMP 0", 
+			e.numToOffset(1 + rv + sizeOfSuperClasses));
 	}
 
 	class Method {
@@ -194,26 +194,26 @@ class ClassType extends Type {
 			return -1;
 		}
 
-		void emitByName(String name) {
+		void emitByName(Emitter e, String name) {
 			int rv;
 
 			rv = getTempAddressIndex(name);
 			if (rv >= 0) {
-				Info.emitBuf("TEMP", Integer.toString(rv));
+				e.emitBuf("TEMP", Integer.toString(rv));
 				return;
 			}
-			ClassType.this.emitByName(name);
+			ClassType.this.emitByName(e, name);
 		}
 
-		void emitAssignByName(String name) {
+		void emitAssignByName(Emitter e, String name) {
 			int rv;
 
 			rv = getTempAddressIndex(name);
 			if (rv >= 0) {
-				Info.emitBuf("MOEV", "TEMP", Integer.toString(rv));
+				e.emitBuf("MOEV", "TEMP", Integer.toString(rv));
 				return;
 			}
-			ClassType.this.emitAssignByName(name);
+			ClassType.this.emitAssignByName(e, name);
 		}
 
 		String getLabel() {

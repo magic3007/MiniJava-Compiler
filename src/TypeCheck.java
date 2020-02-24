@@ -138,10 +138,12 @@ class ScanClassMethods extends DepthFirstVisitor {
 abstract class AbstractGetExpressionType<T> extends GJNoArguDepthFirst<T> {}
 
 class GetExpressionType extends AbstractGetExpressionType<Type> {
-	GetExpressionType(ClassCollection classes) {
+	GetExpressionType(ClassCollection classes, Emitter e) {
 		this.classes = classes;
+		this.e = e;
 	}
 
+	Emitter e;
 	ClassCollection classes;
 	ClassType selfClass;
 	ClassType.Method selfMethod;
@@ -440,7 +442,7 @@ class TypeCheckResult {
 }
 
 public class TypeCheck {
-	static TypeCheckResult TypeCheck() throws Exception {
+	static TypeCheckResult TypeCheck(Emitter e) throws Exception {
 		MiniJavaParser parser = new MiniJavaParser(System.in);
 		ClassCollection classes = new ClassCollection();
 		Node root = parser.Goal();
@@ -449,18 +451,19 @@ public class TypeCheck {
 		root.accept(new ScanForSuperClassName(), classes);
 		root.accept(new ScanClassMethods(classes));
 		classes.dump();
-		root.accept(new GetExpressionType(classes));
+		root.accept(new GetExpressionType(classes, e));
 		return new TypeCheckResult(classes, root);
 	}
 
 	public static void main(String []args) throws Exception {
+		Emitter e = new Emitter();
 		if (Info.DEBUG) {
-			TypeCheck();
+			TypeCheck(e);
 		}
 
 		try {
-			TypeCheck();	
-		} catch (Exception e) {
+			TypeCheck(e);	
+		} catch (Exception e_) {
 			System.exit(0);
 		}
 
