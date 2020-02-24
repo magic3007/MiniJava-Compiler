@@ -7,6 +7,7 @@ JAVAC = javac
 JFLAGS = -g
 JTB = deps/jtb132.jar
 JAVACC = deps/javacc-7.0.5.jar
+PGI = deps/pgi.jar
 
 default: build
 
@@ -56,6 +57,7 @@ test: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 	@echo Congrats! You have passed all the test.
 
 %.testmj: $(TEST_MJ_DIR)/%.java
+	@rm -rf $(OUT)/minijava/$*.class
 	@sh -c '$(JAVAC) -d $(OUT)/minijava $< &>/dev/null';\
 	EXIT_CODE=$$?;\
 	if [ $$EXIT_CODE -eq 0 ] ; \
@@ -63,6 +65,11 @@ test: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 		else echo "Type error" > $(OUT)/std.output; fi; 
 	@$(JAVA) -cp $(OUT) TypeCheck < $< > $(OUT)/my.output
 	@diff $(OUT)/std.output $(OUT)/my.output
-	@echo ========= passed! $<
-
+	@echo [TypeCheck] passed! $<
+	@if [ -e $(OUT)/minijava/$*.class ]; then \
+		$(JAVA) -cp $(OUT)/minijava $* > $(OUT)/std.output; \
+		$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -jar $(PGI) > $(OUT)/my.output;\
+		diff $(OUT)/std.output $(OUT)/my.output && \
+		echo "[   J2P   ] passed!" $<;\
+    fi
 
