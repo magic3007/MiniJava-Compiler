@@ -3,30 +3,6 @@ import minijava.visitor.*;
 import minijava.syntaxtree.*;
 import java.util.*;
 
-class Info {
-	private static void dump(String... msg) {
-		if (true) {
-			// pass
-		} else {
-			for (String m : msg) {
-				System.out.print(m);
-				System.out.print(" ");
-			}
-			System.out.println();
-		}
-	}
-
-	static void panic(String... msg) {
-		dump(msg);
-		System.out.println("Type error");
-		throw new RuntimeException("DEBUG");
-	}
-
-	static void debug(String... msg) {
-		dump(msg);
-	}
-}
-
 // 1st pass: scan globally for class name
 class ScanForClassName<T extends ClassCollection> extends GJVoidDepthFirst<T> {
 	public void visit(ClassDeclaration node, T classes) {
@@ -443,17 +419,26 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 
 public class TypeCheck {
 
-	public static void main(String []args) {
-		try {
-			MiniJavaParser parser = new MiniJavaParser(System.in);
-			ClassCollection classes = new ClassCollection();
-			Node root = parser.Goal();
+	static Node TypeCheck() throws Exception {
+		MiniJavaParser parser = new MiniJavaParser(System.in);
+		ClassCollection classes = new ClassCollection();
+		Node root = parser.Goal();
 
-			root.accept(new ScanForClassName(), classes);
-			root.accept(new ScanForSuperClassName(), classes);
-			root.accept(new ScanClassMethods(classes));
-			classes.dump();
-			root.accept(new GetExpressionType(classes));
+		root.accept(new ScanForClassName(), classes);
+		root.accept(new ScanForSuperClassName(), classes);
+		root.accept(new ScanClassMethods(classes));
+		classes.dump();
+		root.accept(new GetExpressionType(classes));
+		return root;
+	}
+
+	public static void main(String []args) throws Exception {
+		if (Info.DEBUG) {
+			TypeCheck();
+		}
+
+		try {
+			TypeCheck();	
 		} catch (Exception e) {
 			System.exit(0);
 		}
