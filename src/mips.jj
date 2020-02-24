@@ -1,0 +1,995 @@
+options {
+  JAVA_UNICODE_ESCAPE = true;
+}
+
+PARSER_BEGIN(MIPSParser)
+  public class MIPSParser {}
+PARSER_END(MIPSParser)
+
+SKIP : /* WHITE SPACE */
+{
+  <WHITE_SPACE: " " | "\t" | "\n" | "\r" | "\f">
+}
+
+SPECIAL_TOKEN : /* COMMENTS */
+{
+  <SINGLE_LINE_COMMENT: "#" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>
+}
+
+TOKEN : 
+{
+  < SEMI: 	";" >
+| < COLON: 	":" >
+| < DOT: 	"." >
+| < COMMA: 	"," >
+| < LPAREN: 	"(" >
+| < RPAREN: 	")" >
+| < PLUS: 	"+" >
+| < MINUS: 	"-" >
+| < TIMES: 	"*" >
+| < BY: 	"/" >
+| < MOD: 	"%" >
+| < LSHIFT: 	"<<" >
+| < RSHIFT: 	">>" >
+| < AMP: 	"&" >
+| < CARET: 	"^" >
+| < PIPE: 	"|" >
+| < TILDE: 	"~" >
+| < BANG: 	"!" >
+| < ABS:        "abs" >
+| < ADD:        "add" >
+| < ADDCIU:     "addciu" >
+| < ADDU:       "addu" >
+| < AND:        "and" >
+| < B:  	"b" >
+| < BAL:        "bal" >
+| < BC0F:       "bc0f" >
+| < BC0FL:      "bc0fl" >
+| < BC0T:       "bc0t" >
+| < BC0TLBC1F:  "bc0tlbc1f" >
+| < BC1FL:      "bc1fl" >
+| < BC1T:       "bc1t" >
+| < BC1TL:      "bc1tl" >
+| < BC2F:       "bc2f" >
+| < BC2FL:      "bc2fl" >
+| < BC2T:       "bc2t" >
+| < BC2TL:      "bc2tl" >
+| < BEQ:        "beq" >
+| < BEQL:       "beql" >
+| < BEQZ:       "beqz" >
+| < BEQZL:      "beqzl" >
+| < BGE:        "bge" >
+| < BGEL:       "bgel" >
+| < BGEU:       "bgeu" >
+| < BGEUL:      "bgeul" >
+| < BGEZ:       "bgez" >
+| < BGEZAL:     "bgezal" >
+| < BGEZALL:    "bgezall" >
+| < BGEZL:      "bgezl" >
+| < BGT:        "bgt" >
+| < BGTL:       "bgtl" >
+| < BGTU:       "bgtu" >
+| < BGTUL:      "bgtul" >
+| < BGTZ:       "bgtz" >
+| < BGTZL:      "bgtzl" >
+| < BLE:        "ble" >
+| < BLEL:       "blel" >
+| < BLEU:       "bleu" >
+| < BLEUL:      "bleul" >
+| < BLEZ:       "blez" >
+| < BLEZL:      "blezl" >
+| < BLT:        "blt" >
+| < BLTL:       "bltl" >
+| < BLTU:       "bltu" >
+| < BLTUL:      "bltul" >
+| < BLTZ:       "bltz" >
+| < BLTZAL:     "bltzal" >
+| < BLTZALL:    "bltzall" >
+| < BLTZL:      "bltzl" >
+| < BNE:        "bne" >
+| < BNEL:       "bnel" >
+| < BNEZ:       "bnez" >
+| < BNEZL:      "bnezl" >
+| < BREAK:      "break" >
+| < CACHE:      "cache" >
+| < CFC0:       "cfc0" >
+| < CFC1:       "cfc1" >
+| < CFC2:       "cfc2" >
+| < CTC0:       "ctc0" >
+| < CTC1:       "ctc1" >
+| < CTC2:       "ctc2" >
+| < DABS:       "dabs" >
+| < DADD:       "dadd" >
+| < DADDI:      "daddi" >
+| < DADDIU:     "daddiu" >
+| < DADDU:      "daddu" >
+| < DDIV:       "ddiv" >
+| < DDIVD:      "ddivd" >
+| < DDIVDU:     "ddivdu" >
+| < DDIVU:      "ddivu" >
+| < DIV:        "div" >
+| < DIVD:       "divd" >
+| < DIVDU:      "divdu" >
+| < DIVO:       "divo" >
+| < DIVOU:      "divou" >
+| < DIVU:       "divu" >
+| < DLA:        "dla" >
+| < DLI:        "dli" >
+| < DMADD16:    "dmadd16" >
+| < DMFC0:      "dmfc0" >
+| < DMFC1:      "dmfc1" >
+| < DMFC2:      "dmfc2" >
+| < DMTC0:      "dmtc0" >
+| < DMTC1:      "dmtc1" >
+| < DMTC2:      "dmtc2" >
+| < DMUL:       "dmul" >
+| < DMULO:      "dmulo" >
+| < DMULOU:     "dmulou" >
+| < DMULT:      "dmult" >
+| < DMULTU:     "dmultu" >
+| < DNEG:       "dneg" >
+| < DNEGU:      "dnegu" >
+| < DREM:       "drem" >
+| < DREMU:      "dremu" >
+| < DRET:       "dret" >
+| < DROL:       "drol" >
+| < DROR:       "dror" >
+| < DSLL:       "dsll" >
+| < DSLLV:      "dsllv" >
+| < DSLL32:     "dsll32" >
+| < DSRA:       "dsra" >
+| < DSRA32:     "dsra32" >
+| < DSRL:       "dsrl" >
+| < DSRLV:      "dsrlv" >
+| < DSRL32:     "dsrl32" >
+| < DSUB:       "dsub" >
+| < DSUBU:      "dsubu" >
+| < ERET:       "eret" >
+| < FFC:        "ffc" >
+| < FFS:        "ffs" >
+| < FLUSHD:     "flushd" >
+| < J:  	"j" >
+| < JR: 	"jr" >
+| < JAL:        "jal" >
+| < JALR:       "jalr" >
+| < LA: 	"la" >
+| < LB: 	"lb" >
+| < LBU:        "lbu" >
+| < LD: 	"ld" >
+| < LDL:        "ldl" >
+| < LDR:        "ldr" >
+| < LDXC1:      "ldxc1" >
+| < LH: 	"lh" >
+| < LHU:        "lhu" >
+| < LI: 	"li" >
+| < LL: 	"ll" >
+| < LLD:        "lld" >
+| < LUI:        "lui" >
+| < LW: 	"lw" >
+| < LWC1:       "lwc1" >
+| < LWL:        "lwl" >
+| < LWR:        "lwr" >
+| < LWU:        "lwu" >
+| < LWXC1:      "lwxc1" >
+| < MADD:       "madd" >
+| < MADDU:      "maddu" >
+| < MAD:        "mad" >
+| < MADU:       "madu" >
+| < MADD16:     "madd16" >
+| < MAX:        "max" >
+| < MFC0:       "mfc0" >
+| < MFC1:       "mfc1" >
+| < MFC2:       "mfc2" >
+| < MFHI:       "mfhi" >
+| < MFLO:       "mflo" >
+| < MIN:        "min" >
+| < MOVE:       "move" >
+| < MOVF:       "movf" >
+| < MOVN:       "movn" >
+| < MOVT:       "movt" >
+| < MOVZ:       "movz" >
+| < MSUB:       "msub" >
+| < MSUBU:      "msubu" >
+| < MTC0:       "mtc0" >
+| < MTC1:       "mtc1" >
+| < MTC2:       "mtc2" >
+| < MTHI:       "mthi" >
+| < MTLO:       "mtlo" >
+| < MUL:        "mul" >
+| < MULU:       "mulu" >
+| < MULO:       "mulo" >
+| < MULOU:      "mulou" >
+| < MULT:       "mult" >
+| < MULTU:      "multu" >
+| < NEG:        "neg" >
+| < NEGU:       "negu" >
+| < NOP:        "nop" >
+| < NOR:        "nor" >
+| < NOT:        "not" >
+| < OR: 	"or" >
+| < ORI:        "ori" >
+| < PREF:       "pref" >
+| < PREFX:      "prefx" >
+| < R2U:        "r2u" >
+| < RADD:       "radd" >
+| < REM:        "rem" >
+| < REMU:       "remu" >
+| < RFE:        "rfe" >
+| < RMUL:       "rmul" >
+| < ROL:        "rol" >
+| < ROR:        "ror" >
+| < RSUB:       "rsub" >
+| < SB: 	"sb" >
+| < SC: 	"sc" >
+| < SCD:        "scd" >
+| < SD: 	"sd" >
+| < SDBBP:      "sdbbp" >
+| < SDC1:       "sdc1" >
+| < SDL:        "sdl" >
+| < SDR:        "sdr" >
+| < SDXC1:      "sdxc1" >
+| < SELSL:      "selsl" >
+| < SELSR:      "selsr" >
+| < SEQ:        "seq" >
+| < SGE:        "sge" >
+| < SGEU:       "sgeu" >
+| < SGT:        "sgt" >
+| < SGTU:       "sgtu" >
+| < SH: 	"sh" >
+| < SLE:        "sle" >
+| < SLEU:       "sleu" >
+| < SLL:        "sll" >
+| < SLLV:       "sllv" >
+| < SLT:        "slt" >
+| < SLTI:       "slti" >
+| < SLTIU:      "sltiu" >
+| < SLTU:       "sltu" >
+| < SNE:        "sne" >
+| < SRA:        "sra" >
+| < SRAV:       "srav" >
+| < SRL:        "srl" >
+| < SRLV:       "srlv" >
+| < STANDBY:    "standby" >
+| < SUB:        "sub" >
+| < SUBU:       "subu" >
+| < SUSPEND:    "suspend" >
+| < SW: 	"sw" >
+| < SWC1:       "swc1" >
+| < SWL:        "swl" >
+| < SWR:        "swr" >
+| < SWXC1:      "swxc1" >
+| < SYNC:       "sync" >
+| < SYSCALL:    "syscall" >
+| < TEQ:        "teq" >
+| < TEQI:       "teqi" >
+| < TGE:        "tge" >
+| < TGEI:       "tgei" >
+| < TGEIU:      "tgeiu" >
+| < TGEU:       "tgeu" >
+| < TLBP:       "tlbp" >
+| < TLBR:       "tlbr" >
+| < TLBWI:      "tlbwi" >
+| < TLBWR:      "tlbwr" >
+| < TLT:        "tlt" >
+| < TLTI:       "tlti" >
+| < TLTIU:      "tltiu" >
+| < TLTU:       "tltu" >
+| < TNE:        "tne" >
+| < TNEI:       "tnei" >
+| < U2R:        "u2r" >
+| < ULD:        "uld" >
+| < ULH:        "ulh" >
+| < ULHU:       "ulhu" >
+| < ULW:        "ulw" >
+| < USD:        "usd" >
+| < USHUSW:     "ushusw" >
+| < WAITI:      "waiti" >
+| < WB: 	"wb" >
+| < XOR:        "xor" >
+| < XORI:       "xori" >
+| < ABS_S:      "abs.s" >
+| < ADD_S:      "add.s" >
+| < C_EQ_S:     "c.eq.s" >
+| < C_F_S:      "c.f.s" >
+| < C_LE_S:     "c.le.s" >
+| < C_LT_S:     "c.lt.s" >
+| < C_NGE_S:    "c.nge.s" >
+| < C_NGL_S:    "c.ngl.s" >
+| < C_NGT_S:    "c.ngt.s" >
+| < C_OLE_S:    "c.ole.s" >
+| < C_OLT_S:    "c.olt.s" >
+| < C_SEQ_S:    "c.seq.s" >
+| < C_SF_S:     "c.sf.s" >
+| < C_UEQ_S:    "c.ueq.s" >
+| < C_ULE_S:    "c.ule.s" >
+| < C_ULT_S:    "c.ult.s" >
+| < C_UN_S:     "c.un.s" >
+| < CEIL_L_D:   "ceil.l.d" >
+| < CEIL_L_S:   "ceil.l.s" >
+| < CEIL_W_D:   "ceil.w.d" >
+| < CEIL_W_S:   "ceil.w.s" >
+| < CVT_D_L:    "cvt.d.l" >
+| < CVT_D_S:    "cvt.d.s" >
+| < CVT_D_W:    "cvt.d.w" >
+| < CVT_L_D:    "cvt.l.d" >
+| < CVT_L_S:    "cvt.l.s" >
+| < CVT_S_D:    "cvt.s.d" >
+| < CVT_S_L:    "cvt.s.l" >
+| < CVT_S_W:    "cvt.s.w" >
+| < CVT_W_D:    "cvt.w.d" >
+| < CVT_W_S:    "cvt.w.s" >
+| < DIV_S:      "div.s" >
+| < FLOOR_L_D:  "floor.l.d" >
+| < FLOOR_L_S:  "floor.l.s" >
+| < FLOOR_W_D:  "floor.w.d" >
+| < FLOOR_W_S:  "floor.w.s" >
+| < L_D:        "l.d" >
+| < L_S:        "l.s" >
+| < LDC1:       "ldc1" >
+| < MADD_S:     "madd.s" >
+| < MOV_S:      "mov.s" >
+| < MOVF_S:     "movf.s" >
+| < MOVN_S:     "movn.s" >
+| < MOVT_S:     "movt.s" >
+| < MOVZ_S:     "movz.s" >
+| < MSUB_S:     "msub.s" >
+| < MUL_S:      "mul.s" >
+| < NEG_S:      "neg.s" >
+| < NMADD_S:    "nmadd.s" >
+| < NMSUB_S:    "nmsub.s" >
+| < RECIP_S:    "recip.s" >
+| < ROUND_L_D:  "round.l.d" >
+| < ROUND_L_S:  "round.l.s" >
+| < ROUND_W_D:  "round.w.d" >
+| < ROUND_W_S:  "round.w.s" >
+| < RSQRT_S:    "rsqrt.s" >
+| < S_D:        "s.d" >
+| < S_S:        "s.s" >
+| < SQRT_S:     "sqrt.s" >
+| < SUB_S:      "sub.s" >
+| < TRUNC_L_D:  "trunc.l.d" >
+| < TRUNC_L_S:  "trunc.l.s" >
+| < ASCII: 	".ascii" >
+| < ASCIIZ: 	".asciiz" >
+| < SPACE: 	".space" >
+| < BYTE: 	".byte" >
+| < HALF: 	".half" >
+| < WORD: 	".word" >
+| < DOUBLE: 	".double" >
+| < FLOAT2: 	".float" >
+| < SET: 	".set" >
+| < VOLATILE: 	"volatile" >
+| < NOVOLATILE: "novolatile" >
+| < REORDER: 	"reorder" >
+| < NOREORDER: 	"noreorder" >
+| < NOAT: 	"noat" >
+| < MACRO: 	"macro" >
+| < NOMACRO: 	"nomacro" >
+| < BOPT: 	"bopt" >
+| < NOBOPT: 	"nobopt" >
+| < NOMOVE: 	"nomove" >
+| < TEXT: 	".text" >
+| < DATA: 	".data" >
+| < RDATA: 	".rdata" >
+| < SDATA: 	".sdata" >
+| < ALIGN: 	".align" >
+| < GLOBL: 	".globl" >
+| < EXTERN: 	".extern" >
+| < COMM: 	".comm" >
+| < LCOMM: 	".lcomm" >
+| < ENT: 	".ent" >
+| < AENT: 	".aent" >
+| < MASK: 	".mask" >
+| < FMASK: 	".fmask" >
+| < FRAME: 	".frame" >
+| < END: 	".end" >
+| < ALIAS: 	".alias" >
+| < BGNB: 	".bgnb" >
+| < ENDB: 	".endb" >
+| < FILE: 	".file" >
+| < GALIVE: 	".galive" >
+| < GJALDEF: 	".gjaldef" >
+| < GJRLIVE: 	".gjrlive" >
+| < LAB: 	".lab" >
+| < LIVEREG: 	".livereg" >
+| < NOALIAS: 	".noalias" >
+| < OPTION: 	".option" >
+| < FLAG: 	"flag" >
+| < VERSTAMP: 	".verstamp" >
+| < VREG: 	".vreg" >
+| < ZERO: 	"zero" >
+| < AT: 	"at" >
+| < V0: 	"v0" >
+| < V1: 	"v1" >
+| < A0: 	"a0" >
+| < A1: 	"a1" >
+| < A2: 	"a2" >
+| < A3: 	"a3" >
+| < T0: 	"t0" >
+| < T1: 	"t1" >
+| < T2: 	"t2" >
+| < T3: 	"t3" >
+| < T4: 	"t4" >
+| < T5: 	"t5" >
+| < T6: 	"t6" >
+| < T7: 	"t7" >
+| < S0: 	"s0" >
+| < S1: 	"s1" >
+| < S2: 	"s2" >
+| < S3: 	"s3" >
+| < S4: 	"s4" >
+| < S5: 	"s5" >
+| < S6: 	"s6" >
+| < S7: 	"s7" >
+| < T8: 	"t8" >
+| < T9: 	"t9" >
+| < K0: 	"k0" >
+| < K1: 	"k1" >
+| < GP: 	"gp" >
+| < SP: 	"sp" >
+| < S8: 	"s8" >
+| < FP: 	"fp" >
+| < RA: 	"ra" >
+| < DZERO: 	"$zero" >
+| < DAT: 	"$at" >
+| < DV0: 	"$v0" >
+| < DV1: 	"$v1" >
+| < DA0: 	"$a0" >
+| < DA1: 	"$a1" >
+| < DA2: 	"$a2" >
+| < DA3: 	"$a3" >
+| < DT0: 	"$t0" >
+| < DT1: 	"$t1" >
+| < DT2: 	"$t2" >
+| < DT3: 	"$t3" >
+| < DT4: 	"$t4" >
+| < DT5: 	"$t5" >
+| < DT6: 	"$t6" >
+| < DT7: 	"$t7" >
+| < DS0: 	"$s0" >
+| < DS1: 	"$s1" >
+| < DS2: 	"$s2" >
+| < DS3: 	"$s3" >
+| < DS4: 	"$s4" >
+| < DS5: 	"$s5" >
+| < DS6: 	"$s6" >
+| < DS7: 	"$s7" >
+| < DT8: 	"$t8" >
+| < DT9: 	"$t9" >
+| < DK0: 	"$k0" >
+| < DK1: 	"$k1" >
+| < DGP: 	"$gp" >
+| < DSP: 	"$sp" >
+| < DS8: 	"$s8" >
+| < DFP: 	"$fp" >
+| < DRA: 	"$ra" >
+}
+
+TOKEN : /* LITERALS */
+{
+  < DECIMAL: ( ["1"-"9"] (["0"-"9"])* | "0" ) >
+}
+
+TOKEN : /* LITERALS */
+{
+  < FLOAT: (["0"-"9"])+ "." (["0"-"9"])* (["e","E"] (["+","-"])? (["0"-"9"])+)? 
+         | "." (["0"-"9"])+ (["e","E"] (["+","-"])? (["0"-"9"])+)? 
+         | (["0"-"9"])+ ["e","E"] (["+","-"])? (["0"-"9"])+ >
+}
+
+TOKEN : /* LITERALS */
+{
+  < HEXADECIMAL: ( "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+ ) >
+}
+
+TOKEN : /* LITERALS */
+{
+  < OCTAL: ( "0"(["0"-"7"])+ ) >
+}
+
+TOKEN : /* LITERALS */
+{
+  < CHARACTER:
+      "'"
+      (   (~["'","\\","\n","\r"])
+        | ("\\"
+            ( ["n","t","b","r","f","\\","'","\""]
+            | ["0"-"7"] ( ["0"-"7"] )?
+            | ["0"-"3"] ["0"-"7"] ["0"-"7"]
+            )
+          )
+      )
+      "'"
+  >
+}
+
+TOKEN : /* LITERALS */
+{
+  < STRING:
+      "\""
+      (   (~["\"","\\","\n","\r"])
+        | ("\\"
+            ( ["n","t","b","r","f","\\","'","\""]
+            | ["0"-"7"] ( ["0"-"7"] )?
+            | ["0"-"3"] ["0"-"7"] ["0"-"7"]
+            )
+          )
+      )*
+      "\""
+  >
+}
+
+TOKEN :
+{
+  < DOLLAR_DECIMAL: "$" <DECIMAL> >
+}
+
+TOKEN :
+{
+  < DOLLAR_F_DECIMAL: "$f" <DECIMAL> >
+}
+
+TOKEN : /* IDENTIFIERS */
+{
+  < IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>)* >
+|
+  < #LETTER:
+      [
+       "\u0024",
+       "\u002e",
+       "\u0041"-"\u005a",
+       "\u005f",
+       "\u0061"-"\u007a",
+       "\u00c0"-"\u00d6",
+       "\u00d8"-"\u00f6",
+       "\u00f8"-"\u00ff",
+       "\u0100"-"\u1fff",
+       "\u3040"-"\u318f",
+       "\u3300"-"\u337f",
+       "\u3400"-"\u3d2d",
+       "\u4e00"-"\u9fff",
+       "\uf900"-"\ufaff"
+      ]
+  >
+|
+  < #DIGIT:
+      [
+       "\u0030"-"\u0039",
+       "\u0660"-"\u0669",
+       "\u06f0"-"\u06f9",
+       "\u0966"-"\u096f",
+       "\u09e6"-"\u09ef",
+       "\u0a66"-"\u0a6f",
+       "\u0ae6"-"\u0aef",
+       "\u0b66"-"\u0b6f",
+       "\u0be7"-"\u0bef",
+       "\u0c66"-"\u0c6f",
+       "\u0ce6"-"\u0cef",
+       "\u0d66"-"\u0d6f",
+       "\u0e50"-"\u0e59",
+       "\u0ed0"-"\u0ed9",
+       "\u1040"-"\u1049"
+      ]
+  >
+}
+
+TOKEN : 
+{
+  < IDENTIFIER_COLON: <IDENTIFIER> (<WHITE_SPACE>)* ":" >
+}
+
+TOKEN : 
+{
+  < IDENTIFIER_EQUAL: <IDENTIFIER> (<WHITE_SPACE>)* "=" >
+}
+
+TOKEN : 
+{
+  < DECIMAL_COLON: <DECIMAL> (<WHITE_SPACE>)* ":" >
+}
+
+TOKEN :
+{
+  < DECIMAL_B: <DECIMAL> "b" >
+}
+
+TOKEN :
+{
+  < DECIMAL_F: <DECIMAL> "f" >
+}
+
+
+/*********************************
+ * The MIPS Grammar Starts Here *
+ *********************************/
+
+
+void Goal() :
+{}
+{
+  StmtList() <EOF>
+}
+
+void StmtList() :
+{}
+{
+  Stmt() [ StmtList() ]
+}
+
+void Stmt() :
+{}
+{
+  Stat() [ ";" ]
+}
+
+void Stat() :
+{}
+{	
+  LOOKAHEAD( Label() Instruction() )
+  Label() Instruction()
+|
+  LOOKAHEAD( Label() Data() )
+  Label() Data()
+|
+  Label()
+|
+  Instruction()
+|
+  Data()
+|
+  SymDef()
+|
+  Directive()
+}
+
+void Label() :
+{}
+{	
+  <IDENTIFIER_COLON>
+|
+  <DECIMAL_COLON>
+}
+
+void Instruction() :
+{}
+{	
+  OpCode() [ Operand() [ "," Operand() [ "," Operand() ] ] ]
+}
+
+void Operand() :
+{}
+{
+  Register()
+|
+  LOOKAHEAD ( "(" Register() ")" )
+  "(" Register() ")"
+|
+  FloatRegister()
+|
+  AddrImmed() [ "(" Register() ")" ]
+|
+  <FLOAT>
+}
+
+void Register() :
+{}
+{	
+  <DOLLAR_DECIMAL>
+|
+  RegisterName()
+|
+  DollarRegisterName()
+}
+
+void FloatRegister() :
+{}
+{	
+  <DOLLAR_F_DECIMAL>
+}
+
+void AddrImmed() :
+{}
+{
+  LOOKAHEAD( LabelExpr() )
+  LabelExpr() [ ( "+" | "-" ) Expr() ]
+|
+  Expr()
+}
+
+void LabelExpr() :
+{}
+{
+  LabelRef() [ LOOKAHEAD("-") "-" LabelRef() ] 
+}
+
+void LabelRef() :
+{}
+{
+  <DECIMAL_B>
+|
+  <DECIMAL_F>
+|
+  <IDENTIFIER>
+|
+  "." 
+}
+
+void Data() :
+{}
+{
+  DataMode() DataList()
+|
+  ".ascii" <STRING>
+|
+  ".asciiz" <STRING>
+|
+  ".space" Expr()
+}
+
+void DataMode() :
+{}
+{
+  ".byte"
+|
+  ".half"
+|
+  ".word"
+|
+  ".float"
+|
+  ".double"
+}
+
+void DataList() :
+{}
+{
+  DataExpr() ( LOOKAHEAD( "," ) "," DataList() )*
+}
+
+void DataExpr() :
+{}
+{
+  Expr() [ LOOKAHEAD(":") ":" Expr() ] 
+|
+  <FLOAT> [ LOOKAHEAD(":") ":" <FLOAT> ] 
+}
+
+void SymDef() :
+{}
+{
+  <IDENTIFIER_EQUAL> Expr()
+}
+
+void Directive() :
+{}
+{
+  SetDir()
+| 
+  SegmentDir()
+| 
+  AlignDir()
+| 
+  SymbolDir()
+| 
+  BlockDir()
+| 
+  CompilerDir()
+}
+
+void SetDir() :
+{}
+{
+ ".set" SetDirArgs()
+}
+
+void SetDirArgs() :
+{}
+{
+  "volatile"
+| 
+  "novolatile"
+|
+  "reorder" 
+| 
+  "noreorder" 
+|
+  "at" 
+| 
+  "noat" 
+|
+  "macro" 
+| 
+  "nomacro" 
+|
+  "bopt" 
+| 
+  "nobopt" 
+|
+  "move" 
+| 
+  "nomove" 
+}
+
+void SegmentDir() :
+{}
+{
+  ".text"
+|
+  ".data"
+|
+  ".rdata"
+|
+  ".sdata"
+}
+
+void AlignDir() :
+{}
+{
+ ".align" Expr()
+}
+
+void SymbolDir() :
+{}
+{
+  ".globl" <IDENTIFIER>
+|
+  ".extern" <IDENTIFIER> "," Constant()
+|
+  ".comm" <IDENTIFIER> "," Constant()
+|
+  ".lcomm" <IDENTIFIER> "," Constant()
+}
+
+void BlockDir() :
+{}
+{
+  ".ent" <IDENTIFIER> [ LOOKAHEAD( "," ) "," Constant() ]
+|
+  ".aent" <IDENTIFIER> "," Constant()
+|
+  ".mask" Expr() "," Expr() 
+|
+  ".fmask" Expr() "," Expr() 
+|
+  ".frame" Register() "," Expr() "," Register()
+|
+  ".end" [ LOOKAHEAD( <IDENTIFIER> ) <IDENTIFIER> ] 
+
+}
+
+void CompilerDir() :
+{}
+{
+  ".alias" Register() "," Register()
+|
+  ".bgnb" Expr() 
+|
+  ".endb" Expr()  
+|
+  ".file" Constant() <STRING>  
+|
+  ".galive" 
+|
+  ".gjaldef"
+|
+  ".gjrlive"
+|
+  ".lab" <IDENTIFIER> 
+|
+  ".livereg" Expr() "," Expr() 
+|
+  ".noalias" Register() "," Register() 
+|
+  ".option" "flag"  
+|
+  ".verstamp" Constant() Constant() 
+|
+  ".vreg" Expr() "," Expr() 
+}
+
+void Expr() :
+{}
+{
+  Term() Expr_() 
+}
+
+void Expr_() :
+{}
+{
+  ( LOOKAHEAD( BinaryOp() Expr() ) BinaryOp() Expr() Expr_() )*
+}
+
+void Term() :
+{}
+{
+  UnaryOp() Term() 
+|
+  Primary()
+}
+
+void Primary() :
+{}
+{
+  Constant()
+|
+  "(" Expr() ")" 
+}
+
+void BinaryOp() :
+{}
+{
+  "*" | "/" | "%" | "+" | "-" | "<<" | ">>" | "&" | "^" | "|" 
+}
+
+void UnaryOp() :
+{}
+{
+  "+" | "-" | "~" | "!"
+}
+
+void Constant() :
+{}
+{
+  <DECIMAL>
+|
+  <HEXADECIMAL>
+|
+  <OCTAL>
+|
+  <CHARACTER> 
+|
+  <IDENTIFIER>
+}
+
+void RegisterName() :
+{}
+{
+  "zero" | "at" | "v0" | "v1" | "a0" | "a1" | "a2" | "a3" | "t0" | "t1" | "t2" | "t3" | "t4" | "t5" | "t6" | "t7" |
+  "s0"   | "s1" | "s2" | "s3" | "s4" | "s5" | "s6" | "s7" | "t8" | "t9" | "k0" | "k1" | "gp" | "sp" | "s8" | "fp" | "ra"
+}
+
+void DollarRegisterName() :
+{}
+{
+  "$zero" | "$at" | "$v0" | "$v1" | "$a0" | "$a1" | "$a2" | "$a3" | "$t0" | "$t1" | "$t2" | "$t3" | "$t4" | "$t5" | "$t6" | "$t7" |
+  "$s0"   | "$s1" | "$s2" | "$s3" | "$s4" | "$s5" | "$s6" | "$s7" | "$t8" | "$t9" | "$k0" | "$k1" | "$gp" | "$sp" | "$s8" | "$fp" | "$ra"
+}
+
+void OpCode() :
+{}
+{
+  "abs" | "add" | "addciu" | "addu" | "and" | "b" | "bal" | "bc0f" | "bc0fl" | "bc0t" |
+  "bc0tlbc1f" | "bc1fl" | "bc1t" | "bc1tl" | "bc2f" | "bc2fl" | "bc2t" | "bc2tl" | "beq" | "beql" |
+  "beqz" | "beqzl" | "bge" | "bgel" | "bgeu" | "bgeul" | "bgez" | "bgezal" | "bgezall" | "bgezl" |
+  "bgt" | "bgtl" | "bgtu" | "bgtul" | "bgtz" | "bgtzl" | "ble" | "blel" | "bleu" | "bleul" |
+  "blez" | "blezl" | "blt" | "bltl" | "bltu" | "bltul" | "bltz" | "bltzal" | "bltzall" | "bltzl" |
+  "bne" | "bnel" | "bnez" | "bnezl" | "break" | "cache" | "cfc0" | "cfc1" | "cfc2" | "ctc0" |
+  "ctc1" | "ctc2" | "dabs" | "dadd" | "daddi" | "daddiu" | "daddu" | "ddiv" | "ddivd" | "ddivdu" |
+  "ddivu" | "div" | "divd" | "divdu" | "divo" | "divou" | "divu" | "dla" | "dli" | "dmadd16" |
+  "dmfc0" | "dmfc1" | "dmfc2" | "dmtc0" | "dmtc1" | "dmtc2" | "dmul" | "dmulo" | "dmulou" | "dmult" |
+  "dmultu" | "dneg" | "dnegu" | "drem" | "dremu" | "dret" | "drol" | "dror" | "dsll" | "dsllv" |
+  "dsll32" | "dsra" | "dsra32" | "dsrl" | "dsrlv" | "dsrl32" | "dsub" | "dsubu" | "eret" | "ffc" |
+  "ffs" | "flushd" | "j" | "jr" | "jal" | "jalr" | "la" | "lb" | "lbu" | "ld" |
+  "ldl" | "ldr" | "ldxc1" | "lh" | "lhu" | "li" | "ll" | "lld" | "lui" | "lw" |
+  "lwc1" | "lwl" | "lwr" | "lwu" | "lwxc1" | "madd" | "maddu" | "mad" | "madu" | 
+  "madd16" | "max" | "mfc0" | "mfc1" | "mfc2" | "mfhi" | "mflo" | "min" | "move" |
+  "movf" | "movn" | "movt" | "movz" | "msub" | "msubu" | "mtc0" | "mtc1" | "mtc2" | "mthi" |
+  "mtlo" | "mul" | "mulu" | "mulo" | "mulou" | "mult" | "multu" | "neg" | "negu" |
+  "nop" | "nor" | "not" | "or" | "ori" | "pref" | "prefx" | "r2u" | "radd" | "rem" |
+  "remu" | "rfe" | "rmul" | "rol" | "ror" | "rsub" | "sb" | "sc" | "scd" | "sd" |
+  "sdbbp" | "sdc1" | "sdl" | "sdr" | "sdxc1" | "selsl" | "selsr" | "seq" | "sge" | "sgeu" |
+  "sgt" | "sgtu" | "sh" | "sle" | "sleu" | "sll" | "sllv" | "slt" | "slti" | "sltiu" |
+  "sltu" | "sne" | "sra" | "srav" | "srl" | "srlv" | "standby" | "sub" | "subu" | "suspend" |
+  "sw" | "swc1" | "swl" | "swr" | "swxc1" | "sync" | "syscall" | "teq" | "teqi" | "tge" |
+  "tgei" | "tgeiu" | "tgeu" | "tlbp" | "tlbr" | "tlbwi" | "tlbwr" | "tlt" | "tlti" | "tltiu" |
+  "tltu" | "tne" | "tnei" | "u2r" | "uld" | "ulh" | "ulhu" | "ulw" | "usd" | "ushusw" |
+  "waiti" | "wb" | "xor" | "xori" | "abs.s" | "add.s" | "c.eq.s" | "c.f.s" | "c.le.s" | "c.lt.s" | "c.nge.s" | "c.ngl.s" |
+  "c.ngt.s" | "c.ole.s" | "c.olt.s" | "c.seq.s" | "c.sf.s" | "c.ueq.s" | "c.ule.s" | "c.ult.s" | "c.un.s" | "ceil.l.d" |
+  "ceil.l.s" | "ceil.w.d" | "ceil.w.s" | "cvt.d.l" | "cvt.d.s" | "cvt.d.w" | "cvt.l.d" | "cvt.l.s" | "cvt.s.d" | "cvt.s.l" |
+  "cvt.s.w" | "cvt.w.d" | "cvt.w.s" | "div.s" | "floor.l.d" | "floor.l.s" | "floor.w.d" | "floor.w.s" | "l.d" | "l.s" |
+  "ldc1" | "madd.s" | "mov.s" | "movf.s" | "movn.s" | "movt.s" | "movz.s" |
+  "msub.s" | "mul.s" | "neg.s" | "nmadd.s" | "nmsub.s" | "recip.s" | "round.l.d" | "round.l.s" | "round.w.d" | "round.w.s" |
+  "rsqrt.s" | "s.d" | "s.s" | "sqrt.s" | "sub.s" | "trunc.l.d" |
+  "trunc.l.s"
+}
+

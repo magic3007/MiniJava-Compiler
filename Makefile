@@ -8,31 +8,33 @@ JFLAGS = -g
 JTB = deps/jtb132.jar
 JAVACC = deps/javacc-7.0.5.jar
 
-default: javacc build
+default: build
 
-javacc: cleanjavacc
-	mkdir $(SRC)/minijava
+PARSERS = $(wildcard $(SRC)/*.jj)
+PARSER_DIR = $(patsubst $(SRC)/%.jj, $(SRC)/%, $(PARSERS))
+
+parser: $(PARSER_DIR)
+
+$(SRC)/%: $(SRC)/%.jj
+	mkdir $(SRC)/$*
 
 	$(JAVA) -jar $(JTB) \
-		-p minijava \
-		-o $(SRC)/minijava/minijava.jbt.jj \
-		$(SRC)/minijava.jj
-	mv syntaxtree $(SRC)/minijava
-	mv visitor $(SRC)/minijava
+		-printer \
+		-p $* \
+		-o $(SRC)/$*/$*.jbt.jj \
+		$(SRC)/$*.jj
+	mv syntaxtree $(SRC)/$*
+	mv visitor $(SRC)/$*
 
-	awk '{ sub(/PARSER_BEGIN\(MiniJavaParser\)/,"&\n\
-		package minijava.parser;\n"); print }' \
-		$(SRC)/minijava/minijava.jbt.jj \
-		> $(SRC)/minijava/minijava.jbt.package.jj
+	awk '{ sub(/PARSER_BEGIN\([a-zA-Z]+\)/,"&\n\
+		package $*.parser;\n"); print }' \
+		$(SRC)/$*/$*.jbt.jj \
+		> $(SRC)/$*/$*.jbt.package.jj
 	$(JAVA) -cp $(JAVACC) javacc \
-		-OUTPUT_DIRECTORY=$(SRC)/minijava/parser \
-		$(SRC)/minijava/minijava.jbt.package.jj
+		-OUTPUT_DIRECTORY=$(SRC)/$*/parser \
+		$(SRC)/$*/$*.jbt.package.jj
 
-cleanjavacc:
-	rm -rf syntaxtree vistor 
-	rm -rf src/minijava
-
-build:
+build: parser
 	$(JAVAC) -d $(OUT) \
 		--source-path $(SRC) \
 		$(SRC)/*.java
@@ -43,14 +45,15 @@ run: build
 
 clean: cleanjavacc
 	rm -rf out
+	rm -rf syntaxtree vistor 
+	rm -rf $(PARSER_DIR)
 
 
 TEST_MJ_DIR = testcases/minijava
 TEST_MJ     = $(wildcard $(TEST_MJ_DIR)/*.java)
-TEST_MJ_OUT = $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 
-test: $(TEST_MJ_OUT)
-	echo done!
+test: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
+	@echo Congrats! You have passed all the test.
 
 %.testmj: $(TEST_MJ_DIR)/%.java
 	@sh -c '$(JAVAC) -d $(OUT)/minijava $< &>/dev/null';\
@@ -58,8 +61,8 @@ test: $(TEST_MJ_OUT)
 	if [ $$EXIT_CODE -eq 0 ] ; \
 		then echo "Program type checked successfully" > $(OUT)/std.output; \
 		else echo "Type error" > $(OUT)/std.output; fi; 
-	$(JAVA) -cp $(OUT) TypeCheck < $< > $(OUT)/my.output
-	diff $(OUT)/std.output $(OUT)/my.output
-	@echo ========= passed! $< ==========
+	@$(JAVA) -cp $(OUT) TypeCheck < $< > $(OUT)/my.output
+	@diff $(OUT)/std.output $(OUT)/my.output
+	@echo ========= passed! $<
 
 
