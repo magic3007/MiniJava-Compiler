@@ -211,11 +211,12 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	RETURN TEMP 1 END
 	*/
 	public Type visit(AndExpression n) {
-		e.emitOpen("/*and*/", "BEGIN");
+		e.emitOpen("/* && */", "BEGIN");
 		String temp1 = e.newTemp();
 		String L1 = e.newLabel();
 		e.emitBuf("MOVE", temp1);
 		Type a = n.f0.accept(this);
+		e.emitFlush();
 		e.emit("CJUMP", temp1, L1);
 		e.emitBuf("MOVE", temp1);
 		Type b = n.f2.accept(this);
@@ -224,6 +225,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 			Info.panic("AndExpression");
 			return null;
 		}
+		e.emitFlush();
 		e.emit(L1, "NOOP");
 		e.emitClose("RETURN", temp1, "END");
 		return new BoolType();
@@ -269,19 +271,47 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		return n.f0.accept(this);
 	} 
 
+	/**
+	a[b]
+
+	BEGIN
+		HLOAD TEMP 1 PLUS 
+		a
+		TIMES 4 PLUS 1 b 0
+	RETURN TEMP 1 END
+	*/
 	public Type visit(ArrayLookup n) {
+		e.emitOpen("BEGIN", "/* ArrayLookup */");	
+		String temp1 = e.newTemp();
+		e.emit("HLOAD", temp1, "PLUS");
+		e.emitBuf("/* array: */");
 		Type a = n.f0.accept(this);
+		e.emitFlush();
+		e.emitBuf("TIMES", e.numToOffset(1), "PLUS", "1");
+		e.emitBuf("/* index */");
 		Type b = n.f2.accept(this);
-		if (a instanceof ArrType && b instanceof IntType) {
-			return new IntType();
-		} else {
+		e.emitBuf("0");
+		e.emitFlush();
+		if (!(a instanceof ArrType && b instanceof IntType)) {
 			Info.panic("ArrayLookup");
 			return null;
 		}
+		e.emitClose("RETURN", temp1, "END");
+		return new IntType();
 	} 
 
+	/**
+	a.length
+
+	BEGIN HLOAD TEMP 1 
+		a
+	RETURN TEMP 1 END
+	*/
 	public Type visit(ArrayLength n) {
+		String temp1 = e.newTemp();
+		e.emitOpen("/* .length */", "HLOAD", temp1);
 		Type a = n.f0.accept(this);
+		e.emitClose("RETURN", temp1, "END");
 		if (a instanceof ArrType) {
 			return new IntType();
 		} else {
@@ -401,10 +431,12 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	}
 
 	public Type visit(TrueLiteral n) {
+		e.emitBuf("1");
 		return new BoolType();
 	}
 
 	public Type visit(FalseLiteral n) {
+		e.emitBuf("0");
 		return new BoolType();
 	}
 
@@ -420,11 +452,30 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		return selfClass;
 	}
 
+	/**
+	new int[a]
+
+	BEGIN
+		MOVE TEMP 1 a
+		MOVE TEMP 2 HALLOCATE TIMES 4 PLUS 1 TEMP 1
+		HSTORE TEMP 2 0 TEMP 1
+	RETURN TEMP 2 END
+	 */
 	public Type visit(ArrayAllocationExpression n) {
+		String temp1 = e.newTemp();
+		String temp2 = e.newTemp();
+		e.emitOpen("BEGIN", "/* new int[] */");
+		e.emitBuf("MOVE", temp1);
 		Type a = n.f3.accept(this);
 		if (!(a instanceof IntType)) {
 			Info.panic("ArrayAllocationExpression");
 		}
+		e.emitFlush();
+		e.emit("MOVE", temp2, "HALLOCATE", "TIMES",
+			e.numToOffset(1), "PLUS", "1", temp1);
+		e.emit("HSTORE", temp2, "0", temp1);
+		e.emitClose("RETURN", temp2, "END");
+
 		return new ArrType();
 	}
 
@@ -464,7 +515,13 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		return type;
 	}
 
+	/*
+	!a
+
+	MINUS 1 a
+	*/
 	public Type visit(NotExpression n) {
+		e.emitBuf("MINUS", "1", "/* not */");
 		Type a = n.f1.accept(this);
 		if (!(a instanceof BoolType)) {
 			Info.panic("ArrayAllocationExpression");
@@ -486,7 +543,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	L2 NOOP
 	*/
 	public Type visit(IfStatement n) {
-		e.emitBuf("/*if*/", "CJUMP");
+		e.emitBuf("/* if */", "CJUMP");
 		Type a = n.f2.accept(this);
 		if (!(a instanceof BoolType)) {
 			Info.panic("IfStatement condition is not a BoolType");
@@ -496,23 +553,45 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		e.emitBuf(L1);
 		e.emitOpen();
 		n.f4.accept(this);
-		e.emitClose("/*else*/", "JUMP", L2);
+		e.emitClose("/* else */", "JUMP", L2);
 		e.emitOpen();
 		e.emitBuf(L1);
 		n.f6.accept(this);
-		e.emitClose("/*endif*/", L2, "NOOP");
+		e.emitClose("/* endif */", L2, "NOOP");
 		return null;
 	}
 
+	/** 
+	while (a) b
+
+	L1 NOOP
+	CJUMP a L2
+		b
+	JUMP L1
+	L2 NOOP
+	*/
 	public Type visit(WhileStatement n) {
+    	String L1 = e.newLabel();
+		String L2 = e.newLabel();
+		e.emitFlush();
+    	e.emit("/* while */", L1, "NOOP"); 
+    	e.emitBuf("CJUMP");
 		Type a = n.f2.accept(this);
 		if (!(a instanceof BoolType)) {
 			Info.panic("IfStatement condition is not a BoolType");
 		}
+    	e.emitBuf(L2);
+    	e.emitFlush();
+    	e.emitOpen();
 		n.f4.accept(this);
+    	e.emitClose("JUMP", L1);
+    	e.emit("/* endwhile */", L2, "NOOP");
 		return null;
 	}
 
+	/*
+	a = b
+	*/
 	public Type visit(AssignmentStatement n) {
 		String name = n.f0.f0.tokenImage;
 		Type a = selfMethod.getTypeByName(name);
@@ -522,15 +601,32 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		return null;
 	}
 
+	/**
+	a[b] = c
+
+	HSTORE PLUS 
+		a 
+		TIMES 4 PLUS 1 
+		b 0 
+		c
+	 */
 	public Type visit(ArrayAssignmentStatement n) {
+		e.emitOpen("/* ArraryAssign */", "HSTORE", "PLUS");
 		Type a = n.f0.accept(this);
+		e.emitFlush();
+		e.emit("TIMES", e.numToOffset(1), "PLUS", "1");
+		e.emitBuf("/* [] */");
 		Type b = n.f2.accept(this);
+		e.emitBuf("0");
+		e.emitFlush();
+		e.emitBuf("/* = */");
 		Type c = n.f5.accept(this);
 		if (!(a instanceof ArrType
 			&& b instanceof IntType
 			&& c instanceof IntType)) {
 			Info.panic("ArrayAssignmentStatement");
 		}
+		e.emitClose();
 		return null;
 	}
 
@@ -574,12 +670,12 @@ public class TypeCheck {
 		Emitter e = new Emitter();
 		if (Info.DEBUG) {
 			TypeCheck(e);
-		}
-
-		try {
-			TypeCheck(e);	
-		} catch (Exception e_) {
-			System.exit(0);
+		} else {
+			try {
+				TypeCheck(e);	
+			} catch (Exception e_) {
+				System.exit(0);
+			}
 		}
 
 		System.out.println("Program type checked successfully");

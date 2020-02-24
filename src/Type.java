@@ -132,11 +132,11 @@ class ClassType extends Type {
 
 		e.emitFlush();
 		String tmp = e.newTemp();
-		e.emit("BEGIN", 
+		e.emit("/* field:", this.name, name, "*/", "BEGIN", 
 			"HLOAD", tmp, "TEMP 0", 
 				// extra 1 for the virtual table
 				e.numToOffset(1 + rv + sizeOfSuperClasses),
-			"RETURN", tmp, "END", "//", this.name, ".", name);	
+			"RETURN", tmp, "END");
 	}
 
 	void emitAssignByName(Emitter e, String name) {
