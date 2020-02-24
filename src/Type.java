@@ -119,6 +119,26 @@ class ClassType extends Type {
 		}
 	}
 
+	void emitByName(String name) {
+		int rv = field.indexOf(name);
+		if (rv < 0) {
+			if (superclass == null) {
+				Info.panic("can not find field", name);
+			} else {
+				superclass.emitByName(name);
+				return;
+			}
+		}
+
+		Info.emitFlush();
+		String tmp = Info.newTemp();
+		Info.emit("BEGIN", 
+			"HLOAD", tmp, "TEMP 0", 
+				// extra 1 for the virtual table
+				Integer.toString(1 + rv + sizeOfSuperClasses),
+			"RETURN", tmp, "END", "//", this.name, ".", name);	
+	}
+
 	class Method {
 		String name;
 		Type returnType;
@@ -143,6 +163,32 @@ class ClassType extends Type {
 			
 			// call getTypeByName() in ClassType
 			return ClassType.this.getTypeByName(name);
+		}
+
+		void emitByName(String name) {
+			int rv;
+
+			rv = param.indexOf(name);
+			// the extra 1 is for `this` parameter
+			if (rv >= 0) {
+				Info.emitBuf("TEMP", Integer.toString(rv) + 1);
+				return;
+			}
+			rv = temp.indexOf(name);
+			if (rv >= 0) {
+				Info.emitBuf("TEMP", Integer.toString(param.size() + rv + 1));
+				return;
+			}
+
+			ClassType.this.emitByName(name);
+		}
+
+		String getLabel() {
+			return ClassType.this.name + name;
+		}
+
+		int numOfParams() {
+			return param.size();
 		}
 	}
 
