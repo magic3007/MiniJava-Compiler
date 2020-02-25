@@ -1,4 +1,7 @@
 # MiniJava-Compiler
+
+![CI](https://github.com/magic3007/MiniJava-Compiler/workflows/CI/badge.svg?branch=master)
+
 Implementation for the lesson Compiling Engineering (2020 Spring) in Peking University, adjusted from UCLA CS 132 Project..
 
 ## Overview
