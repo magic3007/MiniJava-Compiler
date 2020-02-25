@@ -5,7 +5,7 @@ class Info {
 	static final boolean DEBUG = false;
 
 	static void dd(String s) {
-		if (! DEBUG) {
+		if (!DEBUG) {
 			// pass
 		} else {
 			System.out.print(s);
@@ -13,7 +13,7 @@ class Info {
 	}
 
 	static void dln() {
-		if (! DEBUG) {
+		if (!DEBUG) {
 			// pass
 		} else {
 			System.out.println();
@@ -21,7 +21,7 @@ class Info {
 	}
 
 	static void dump(String... msg) {
-		if (! DEBUG) {
+		if (!DEBUG) {
 			// pass
 		} else {
 			for (String m : msg) {
@@ -50,7 +50,8 @@ class Emitter {
 
 	java.io.PrintStream out = System.out;
 
-	Emitter() {}
+	Emitter() {
+	}
 
 	Emitter(boolean mute) {
 		this.mute = mute;
@@ -121,6 +122,3 @@ class Emitter {
 		return "TEMP " + tempNum;
 	}
 }
-
-
-

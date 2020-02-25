@@ -22,13 +22,20 @@ class Type {
 	}
 }
 
-class PrimitiveType extends Type {}
+class PrimitiveType extends Type {
+}
 
-class BoolType extends PrimitiveType {}
-class IntType extends PrimitiveType {}
-class ArrType extends PrimitiveType {}
-class VoidType extends PrimitiveType {}
+class BoolType extends PrimitiveType {
+}
 
+class IntType extends PrimitiveType {
+}
+
+class ArrType extends PrimitiveType {
+}
+
+class VoidType extends PrimitiveType {
+}
 
 class Variable {
 	Type type;
@@ -94,7 +101,8 @@ class ClassType extends Type {
 
 	Type getTypeByName(String name) {
 		Type rv = field.lookupByName(name);
-		if (rv != null) return rv;
+		if (rv != null)
+			return rv;
 
 		if (superclass == null) {
 			Info.panic("can not find symbol " + name);
@@ -132,11 +140,9 @@ class ClassType extends Type {
 
 		e.emitFlush();
 		String tmp = e.newTemp();
-		e.emit("/* field:", this.name, name, "*/", "BEGIN", 
-			"HLOAD", tmp, "TEMP 0", 
+		e.emit("/* field:", this.name, name, "*/", "BEGIN", "HLOAD", tmp, "TEMP 0",
 				// extra 1 for the virtual table
-				e.numToOffset(1 + rv + sizeOfSuperClasses),
-			"RETURN", tmp, "END");
+				e.numToOffset(1 + rv + sizeOfSuperClasses), "RETURN", tmp, "END");
 	}
 
 	void emitAssignByName(Emitter e, String name) {
@@ -149,8 +155,7 @@ class ClassType extends Type {
 				return;
 			}
 		}
-		e.emitBuf("HSTORE", "TEMP 0", 
-			e.numToOffset(1 + rv + sizeOfSuperClasses));
+		e.emitBuf("HSTORE", "TEMP 0", e.numToOffset(1 + rv + sizeOfSuperClasses));
 	}
 
 	class Method {
@@ -171,10 +176,12 @@ class ClassType extends Type {
 			Type rv = null;
 
 			rv = temp.lookupByName(name);
-			if (rv != null) return rv;
+			if (rv != null)
+				return rv;
 			rv = param.lookupByName(name);
-			if (rv != null) return rv;
-			
+			if (rv != null)
+				return rv;
+
 			// call getTypeByName() in ClassType
 			return ClassType.this.getTypeByName(name);
 		}
@@ -225,7 +232,8 @@ class ClassType extends Type {
 		}
 	}
 
-	class StaticMethod extends Method {}
+	class StaticMethod extends Method {
+	}
 
 	List<Method> methods;
 
@@ -328,9 +336,7 @@ class ClassCollection {
 	}
 
 	void dump(ClassType.Method method) {
-		String rv = method.returnType 
-			+ " ( " + dump(method.param) + " )"
-			+ "\t- " + dump(method.temp);
+		String rv = method.returnType + " ( " + dump(method.param) + " )" + "\t- " + dump(method.temp);
 		Info.debug("\t", rv);
 	}
 
