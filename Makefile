@@ -58,7 +58,7 @@ test: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 
 %.testmj: $(TEST_MJ_DIR)/%.java
 	@rm -rf $(OUT)/minijava/$*.class
-	@sh -c '$(JAVAC) -d $(OUT)/minijava $< &>/dev/null';\
+	@$(JAVAC) -d $(OUT)/minijava $< 2>/dev/null;\
 	EXIT_CODE=$$?;\
 	if [ $$EXIT_CODE -eq 0 ] ; \
 		then echo "Program type checked successfully" > $(OUT)/std.output; \
