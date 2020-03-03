@@ -5,30 +5,29 @@ import java.util.*;
 
 // 1st pass: scan globally for class name
 class ScanForClassName<T extends ClassCollection> extends GJVoidDepthFirst<T> {
-	public void visit(ClassDeclaration node, T classes) {
+	public void visit(final ClassDeclaration node, final T classes) {
 		// the class name
 		classes.add(node.f1.f0.tokenImage);
 	}
 
-	public void visit(ClassExtendsDeclaration node, T classes) {
+	public void visit(final ClassExtendsDeclaration node, final T classes) {
 		// the class name
 		classes.add(node.f1.f0.tokenImage);
 	}
 
-	public void visit(MainClass node, T classes) {
+	public void visit(final MainClass node, final T classes) {
 		classes.add(node.f1.f0.tokenImage);
 	}
 }
 
 // 2nd pass:
 class ScanForSuperClassName<T extends ClassCollection> extends GJVoidDepthFirst<T> {
-	public void visit(ClassExtendsDeclaration node, T classes) {
+	public void visit(final ClassExtendsDeclaration node, final T classes) {
 		// the class name
-		String derivedClassName = node.f1.f0.tokenImage;
-		String superClassName = node.f3.f0.tokenImage;
-		ClassType derivedClass = classes.get(derivedClassName);
-		ClassType superClass = classes.get(superClassName);
-		Type t = superClass;
+		final String derivedClassName = node.f1.f0.tokenImage;
+		final String superClassName = node.f3.f0.tokenImage;
+		final ClassType derivedClass = classes.get(derivedClassName);
+		final ClassType superClass = classes.get(superClassName);
 		derivedClass.superclass = superClass;
 	}
 }
@@ -37,39 +36,41 @@ class ScanForSuperClassName<T extends ClassCollection> extends GJVoidDepthFirst<
 
 class Option {
 	Object value;
+
 	Option() {
 		value = null;
 	}
 }
 
 class GetTypeVisitor extends DepthFirstVisitor {
-	GetTypeVisitor(ClassCollection classes, Option option) {
+	GetTypeVisitor(final ClassCollection classes, final Option option) {
 		this.classes = classes;
 		this.option = option;
 	}
+
 	ClassCollection classes;
 	Option option;
 
-	public void visit(BooleanType node) {
+	public void visit(final BooleanType node) {
 		option.value = new BoolType();
 	}
 
-	public void visit(IntegerType node) {
+	public void visit(final IntegerType node) {
 		option.value = new IntType();
 	}
 
-	public void visit(ArrayType node) {
+	public void visit(final ArrayType node) {
 		option.value = new ArrType();
 	}
 
-	public void visit(Identifier node) {
-		String name = node.f0.tokenImage;
+	public void visit(final Identifier node) {
+		final String name = node.f0.tokenImage;
 		option.value = classes.get(name);
 	}
 }
 
 class ScanClassMethods extends DepthFirstVisitor {
-	ScanClassMethods(ClassCollection classes) {
+	ScanClassMethods(final ClassCollection classes) {
 		this.classes = classes;
 	}
 
@@ -77,21 +78,21 @@ class ScanClassMethods extends DepthFirstVisitor {
 	ClassType selfClass;
 	ClassType.Method selfMethod;
 
-	public void visit(ClassDeclaration node) {
+	public void visit(final ClassDeclaration node) {
 		selfClass = classes.get(node.f1.f0.tokenImage);
 		super.visit(node);
 	}
 
-	public void visit(ClassExtendsDeclaration node) {
+	public void visit(final ClassExtendsDeclaration node) {
 		selfClass = classes.get(node.f1.f0.tokenImage);
 		super.visit(node);
 	}
 
-	public void visit(MethodDeclaration node) {
-		String name = node.f2.f0.tokenImage;
-		ClassType.Method method = selfClass.new Method();
+	public void visit(final MethodDeclaration node) {
+		final String name = node.f2.f0.tokenImage;
+		final ClassType.Method method = selfClass.new Method();
 		method.name = name;
-		Option option = new Option();
+		final Option option = new Option();
 		node.f1.accept(new GetTypeVisitor(classes, option));
 		method.returnType = (Type) option.value;
 		selfMethod = method;
@@ -100,19 +101,19 @@ class ScanClassMethods extends DepthFirstVisitor {
 		selfMethod = null;
 	}
 
-	public void visit(FormalParameter node) {
-		Option option = new Option();
+	public void visit(final FormalParameter node) {
+		final Option option = new Option();
 		node.f0.accept(new GetTypeVisitor(classes, option));
-		Type type = (Type) option.value;
-		String name = node.f1.f0.tokenImage;
+		final Type type = (Type) option.value;
+		final String name = node.f1.f0.tokenImage;
 		selfMethod.param.add(type, name);
 	}
 
-	public void visit(VarDeclaration node) {
-		Option option = new Option();
+	public void visit(final VarDeclaration node) {
+		final Option option = new Option();
 		node.f0.accept(new GetTypeVisitor(classes, option));
-		Type type = (Type) option.value;
-		String name = node.f1.f0.tokenImage;
+		final Type type = (Type) option.value;
+		final String name = node.f1.f0.tokenImage;
 		if (selfMethod != null) {
 			selfMethod.temp.add(type, name);
 		} else {
@@ -120,9 +121,9 @@ class ScanClassMethods extends DepthFirstVisitor {
 		}
 	}
 
-	public void visit(MainClass node) {
+	public void visit(final MainClass node) {
 		selfClass = classes.get(node.f1.f0.tokenImage);
-		ClassType.Method method = selfClass.new StaticMethod();
+		final ClassType.Method method = selfClass.new StaticMethod();
 		method.name = "main";
 		method.returnType = new VoidType();
 		method.param.add(new VoidType(), node.f11.f0.tokenImage);
@@ -134,12 +135,13 @@ class ScanClassMethods extends DepthFirstVisitor {
 }
 
 // pass 4: Check type
-//  and Piglet generation
+// and Piglet generation
 
-abstract class AbstractGetExpressionType<T> extends GJNoArguDepthFirst<T> {}
+abstract class AbstractGetExpressionType<T> extends GJNoArguDepthFirst<T> {
+}
 
 class GetExpressionType extends AbstractGetExpressionType<Type> {
-	GetExpressionType(ClassCollection classes, Emitter e) {
+	GetExpressionType(final ClassCollection classes, final Emitter e) {
 		this.classes = classes;
 		this.e = e;
 	}
@@ -149,33 +151,32 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	ClassType selfClass;
 	ClassType.Method selfMethod;
 
-	public Type visit(ClassDeclaration node) {
+	public Type visit(final ClassDeclaration node) {
 		selfClass = classes.get(node.f1.f0.tokenImage);
 		return node.f4.accept(this);
 	}
 
-	public Type visit(ClassExtendsDeclaration node) {
+	public Type visit(final ClassExtendsDeclaration node) {
 		selfClass = classes.get(node.f1.f0.tokenImage);
 		return node.f6.accept(this);
 	}
 
-	public Type visit(MethodDeclaration node) {
-		String name = node.f2.f0.tokenImage;
-		ClassType.Method method = selfClass.getMethodByName(name);
+	public Type visit(final MethodDeclaration node) {
+		final String name = node.f2.f0.tokenImage;
+		final ClassType.Method method = selfClass.getMethodByName(name);
 		selfMethod = method;
-		e.emitOpen(method.getLabel(), "[", 
-			Integer.toString(method.numOfParams() + 1), "]", "BEGIN");
+		e.emitOpen(method.getLabel(), "[", Integer.toString(method.numOfParams() + 1), "]", "BEGIN");
 		node.f8.accept(this);
 		e.emitClose();
 		e.emitOpen("RETURN");
-		Type returnType = node.f10.accept(this);
+		final Type returnType = node.f10.accept(this);
 		typeCastCheck(returnType, method.returnType);
 		selfMethod = null;
 		e.emitClose("/* end", method.getLabel(), "*/", "END");
 		return null;
 	}
 
-	public Type visit(MainClass node) {
+	public Type visit(final MainClass node) {
 		e.emitOpen("MAIN");
 		selfClass = classes.get(node.f1.f0.tokenImage);
 		selfMethod = selfClass.getMethodByName("main");
@@ -184,14 +185,14 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		return null;
 	}
 
-	public Type visit(Expression n) {
+	public Type visit(final Expression n) {
 		return n.f0.accept(this);
 	}
 
-	public Type visit(CompareExpression n) {
+	public Type visit(final CompareExpression n) {
 		e.emitBuf("LT");
-		Type a = n.f0.accept(this);
-		Type b = n.f2.accept(this);
+		final Type a = n.f0.accept(this);
+		final Type b = n.f2.accept(this);
 		if (a instanceof IntType && b instanceof IntType) {
 			return new BoolType();
 		} else {
@@ -201,27 +202,21 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	}
 
 	/**
-	a && b
-
-	BEGIN
-		MOVE TEMP 1 a
-		CJUMP TEMP 1 L1
-		MOVE TEMP 1 b 
-		L1 NOOP
-	RETURN TEMP 1 END
-	*/
-	public Type visit(AndExpression n) {
+	 * a && b
+	 * 
+	 * BEGIN MOVE TEMP 1 a CJUMP TEMP 1 L1 MOVE TEMP 1 b L1 NOOP RETURN TEMP 1 END
+	 */
+	public Type visit(final AndExpression n) {
 		e.emitOpen("/* && */", "BEGIN");
-		String temp1 = e.newTemp();
-		String L1 = e.newLabel();
+		final String temp1 = e.newTemp();
+		final String L1 = e.newLabel();
 		e.emitBuf("MOVE", temp1);
-		Type a = n.f0.accept(this);
+		final Type a = n.f0.accept(this);
 		e.emitFlush();
 		e.emit("CJUMP", temp1, L1);
 		e.emitBuf("MOVE", temp1);
-		Type b = n.f2.accept(this);
-		if (!(a instanceof BoolType 
-			&& b instanceof BoolType)) {
+		final Type b = n.f2.accept(this);
+		if (!(a instanceof BoolType && b instanceof BoolType)) {
 			Info.panic("AndExpression");
 			return null;
 		}
@@ -231,10 +226,10 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		return new BoolType();
 	}
 
-	public Type visit(PlusExpression n) {
+	public Type visit(final PlusExpression n) {
 		e.emitBuf("PLUS");
-		Type a = n.f0.accept(this);
-		Type b = n.f2.accept(this);
+		final Type a = n.f0.accept(this);
+		final Type b = n.f2.accept(this);
 		if (a instanceof IntType && b instanceof IntType) {
 			return new IntType();
 		} else {
@@ -243,10 +238,10 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		}
 	}
 
-	public Type visit(MinusExpression n) {
+	public Type visit(final MinusExpression n) {
 		e.emitBuf("MINUS");
-		Type a = n.f0.accept(this);
-		Type b = n.f2.accept(this);
+		final Type a = n.f0.accept(this);
+		final Type b = n.f2.accept(this);
 		if (a instanceof IntType && b instanceof IntType) {
 			return new IntType();
 		} else {
@@ -255,41 +250,37 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		}
 	}
 
-	public Type visit(TimesExpression n) {
+	public Type visit(final TimesExpression n) {
 		e.emitBuf("TIMES");
-		Type a = n.f0.accept(this);
-		Type b = n.f2.accept(this);
+		final Type a = n.f0.accept(this);
+		final Type b = n.f2.accept(this);
 		if (a instanceof IntType && b instanceof IntType) {
 			return new IntType();
 		} else {
 			Info.panic("TimesExpression");
 			return null;
 		}
-	} 
+	}
 
-	public Type visit(PrimaryExpression n) {
+	public Type visit(final PrimaryExpression n) {
 		return n.f0.accept(this);
-	} 
+	}
 
 	/**
-	a[b]
-
-	BEGIN
-		HLOAD TEMP 1 PLUS 
-		a
-		TIMES 4 PLUS 1 b 0
-	RETURN TEMP 1 END
-	*/
-	public Type visit(ArrayLookup n) {
-		e.emitOpen("BEGIN", "/* ArrayLookup */");	
-		String temp1 = e.newTemp();
+	 * a[b]
+	 * 
+	 * BEGIN HLOAD TEMP 1 PLUS a TIMES 4 PLUS 1 b 0 RETURN TEMP 1 END
+	 */
+	public Type visit(final ArrayLookup n) {
+		e.emitOpen("BEGIN", "/* ArrayLookup */");
+		final String temp1 = e.newTemp();
 		e.emit("HLOAD", temp1, "PLUS");
 		e.emitBuf("/* array: */");
-		Type a = n.f0.accept(this);
+		final Type a = n.f0.accept(this);
 		e.emitFlush();
 		e.emitBuf("TIMES", e.numToOffset(1), "PLUS", "1");
 		e.emitBuf("/* index */");
-		Type b = n.f2.accept(this);
+		final Type b = n.f2.accept(this);
 		e.emitBuf("0");
 		e.emitFlush();
 		if (!(a instanceof ArrType && b instanceof IntType)) {
@@ -298,19 +289,18 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		}
 		e.emitClose("RETURN", temp1, "END");
 		return new IntType();
-	} 
+	}
 
 	/**
-	a.length
-
-	BEGIN HLOAD TEMP 1 
-		a
-	RETURN TEMP 1 END
-	*/
-	public Type visit(ArrayLength n) {
-		String temp1 = e.newTemp();
+	 * a.length
+	 * 
+	 * BEGIN HLOAD TEMP 1 a 0 RETURN TEMP 1 END
+	 */
+	public Type visit(final ArrayLength n) {
+		final String temp1 = e.newTemp();
 		e.emitOpen("/* .length */", "HLOAD", temp1);
-		Type a = n.f0.accept(this);
+		final Type a = n.f0.accept(this);
+		e.emitBuf("0");
 		e.emitClose("RETURN", temp1, "END");
 		if (a instanceof ArrType) {
 			return new IntType();
@@ -321,49 +311,49 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	}
 
 	class GetExpressionListType extends AbstractGetExpressionType<List<Type>> {
-		public List<Type> visit(NodeOptional n) {
+		public List<Type> visit(final NodeOptional n) {
 			if (n.present())
 				return n.node.accept(this);
 			else
 				return new ArrayList<Type>();
 		}
 
-		public List<Type> visit(NodeListOptional n) {
-			List<Type> rv = new ArrayList<Type>();
+		public List<Type> visit(final NodeListOptional n) {
+			final List<Type> rv = new ArrayList<Type>();
 
-			if (! n.present()) {
+			if (!n.present()) {
 				return rv;
 			}
 
-			for (Enumeration<Node> e = n.elements(); e.hasMoreElements(); ) { 
-				ExpressionRest ee = (ExpressionRest) e.nextElement();
+			for (final Enumeration<Node> e = n.elements(); e.hasMoreElements();) {
+				final ExpressionRest ee = (ExpressionRest) e.nextElement();
 				rv.add(ee.f1.accept(GetExpressionType.this));
 				GetExpressionType.this.e.emitFlush();
 			}
 			return rv;
 		}
 
-		public List<Type> visit(ExpressionList n) {
-			Expression e = (Expression) n.f0;
-			Type t = e.accept(GetExpressionType.this);
+		public List<Type> visit(final ExpressionList n) {
+			final Expression e = (Expression) n.f0;
+			final Type t = e.accept(GetExpressionType.this);
 			GetExpressionType.this.e.emitFlush();
-			List<Type> rv = n.f1.accept(this);
+			final List<Type> rv = n.f1.accept(this);
 			// prepend |e|
 			rv.add(0, t);
 			return rv;
 		}
 	}
 
-	void typeCastCheck(Type from, Type to) {
+	void typeCastCheck(final Type from, final Type to) {
 		if (from instanceof PrimitiveType) {
-			if (! from.getClass().equals(to.getClass())) {
+			if (!from.getClass().equals(to.getClass())) {
 				Info.panic("incompatible primitive type " + from + " -> " + to);
 			}
 		} else if (to instanceof PrimitiveType) {
 			Info.panic("cast ClassType to PrimitiveType " + from + " -> " + to);
 		} else {
 			ClassType a = (ClassType) from;
-			ClassType b = (ClassType) to;
+			final ClassType b = (ClassType) to;
 			while (a != null) {
 				if (a.name.equals(b.name)) {
 					return;
@@ -375,46 +365,37 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	}
 
 	/**
-	a.b(...)
-
-	CALL BEGIN
-		MOVE TEMP 1 a
-		HLOAD TEMP 2 TEMP 1 0
-		HLOAD TEMP 2 TEMP 2 $(offset of b)
-	RETURN TEMP 2 END ( 
-		TEMP 1
-		arg1
-		arg2
-	)	
-	*/
-	public Type visit(MessageSend n) {
+	 * a.b(...)
+	 * 
+	 * CALL BEGIN MOVE TEMP 1 a HLOAD TEMP 2 TEMP 1 0 HLOAD TEMP 2 TEMP 2 $(offset
+	 * of b) RETURN TEMP 2 END ( TEMP 1 arg1 arg2 )
+	 */
+	public Type visit(final MessageSend n) {
 		e.emitOpen("CALL", "BEGIN");
-		String temp1 = e.newTemp();
-		String temp2 = e.newTemp();
+		final String temp1 = e.newTemp();
+		final String temp2 = e.newTemp();
 		e.emitBuf("MOVE", temp1);
 
-		Type a = n.f0.accept(this);
+		final Type a = n.f0.accept(this);
 		if (!(a instanceof ClassType)) {
 			Info.panic("MessageSend");
 			return null;
 		}
-		ClassType ct = (ClassType) a;
-		String methodname = n.f2.f0.tokenImage;
-		ClassType.Method method = ct.getMethodByName(methodname);
+		final ClassType ct = (ClassType) a;
+		final String methodname = n.f2.f0.tokenImage;
+		final ClassType.Method method = ct.getMethodByName(methodname);
 
 		e.emitFlush();
 		e.emit("HLOAD", temp2, temp1, "0");
-		e.emitBuf("HLOAD", temp2, temp2, 
-			e.numToOffset(ct.indexOfMethod(methodname)));
+		e.emitBuf("HLOAD", temp2, temp2, e.numToOffset(ct.indexOfMethod(methodname)));
 		e.emitClose("RETURN", temp2, "END", "(");
 		e.emitOpen();
 		e.emit(temp1);
 
-		List<Type> args = n.f4.accept(new GetExpressionListType());
-		int length = args.size();
+		final List<Type> args = n.f4.accept(new GetExpressionListType());
+		final int length = args.size();
 		if (length != method.param.size()) {
-			Info.panic("unequal number of arguments " 
-				+ length + " -> " + method.param.size());
+			Info.panic("unequal number of arguments " + length + " -> " + method.param.size());
 		}
 
 		for (int i = 0; i < length; i++) {
@@ -423,56 +404,52 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 
 		e.emitClose(")");
 		return method.returnType;
-	} 
+	}
 
-	public Type visit(IntegerLiteral n) {
+	public Type visit(final IntegerLiteral n) {
 		e.emitBuf(n.f0.tokenImage);
 		return new IntType();
 	}
 
-	public Type visit(TrueLiteral n) {
+	public Type visit(final TrueLiteral n) {
 		e.emitBuf("1");
 		return new BoolType();
 	}
 
-	public Type visit(FalseLiteral n) {
+	public Type visit(final FalseLiteral n) {
 		e.emitBuf("0");
 		return new BoolType();
 	}
 
-	public Type visit(Identifier n) {
-		String name = n.f0.tokenImage;
-		Type type = selfMethod.getTypeByName(name);
+	public Type visit(final Identifier n) {
+		final String name = n.f0.tokenImage;
+		final Type type = selfMethod.getTypeByName(name);
 		selfMethod.emitByName(e, name);
 		return type;
 	}
 
-	public Type visit(ThisExpression n) {
+	public Type visit(final ThisExpression n) {
 		e.emitBuf("TEMP", "0");
 		return selfClass;
 	}
 
 	/**
-	new int[a]
-
-	BEGIN
-		MOVE TEMP 1 a
-		MOVE TEMP 2 HALLOCATE TIMES 4 PLUS 1 TEMP 1
-		HSTORE TEMP 2 0 TEMP 1
-	RETURN TEMP 2 END
+	 * new int[a]
+	 * 
+	 * BEGIN MOVE TEMP 1 a MOVE TEMP 2 HALLOCATE TIMES 4 PLUS 1 TEMP 1 HSTORE TEMP 2
+	 * 0 TEMP 1 RETURN TEMP 2 END
 	 */
-	public Type visit(ArrayAllocationExpression n) {
-		String temp1 = e.newTemp();
-		String temp2 = e.newTemp();
+	public Type visit(final ArrayAllocationExpression n) {
+		final String temp1 = e.newTemp();
+		final String temp2 = e.newTemp();
 		e.emitOpen("BEGIN", "/* new int[] */");
 		e.emitBuf("MOVE", temp1);
-		Type a = n.f3.accept(this);
+		final Type a = n.f3.accept(this);
 		if (!(a instanceof IntType)) {
 			Info.panic("ArrayAllocationExpression");
 		}
 		e.emitFlush();
-		e.emit("MOVE", temp2, "HALLOCATE", "TIMES",
-			e.numToOffset(1), "PLUS", "1", temp1);
+		e.emit("MOVE", temp2, "HALLOCATE", "TIMES", e.numToOffset(1), "PLUS", "1", temp1);
 		e.emit("HSTORE", temp2, "0", temp1);
 		e.emitClose("RETURN", temp2, "END");
 
@@ -480,35 +457,26 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	}
 
 	/**
-	new a()
+	 * new a()
+	 * 
+	 * BEGIN MOVE TEMP 1 HALLOCATE $(size of a) MOVE TEMP 2 HALLOCATE $(size of
+	 * vitrual table) HSTORE TEMP 1 0 TEMP 2 HSTORE TEMP 2 0 $(method1) HSTORE TEMP
+	 * 2 4 $(method2) HSTORE TEMP 2 8 $(method3) ... RETURN TEMP 1 END
+	 */
+	public Type visit(final AllocationExpression n) {
+		final String name = n.f1.f0.tokenImage;
+		final ClassType type = classes.get(name);
 
-	BEGIN
-		MOVE TEMP 1 HALLOCATE $(size of a)
-		MOVE TEMP 2 HALLOCATE $(size of vitrual table)
-		HSTORE TEMP 1 0 TEMP 2
-		HSTORE TEMP 2 0 $(method1)
-		HSTORE TEMP 2 4 $(method2)
-		HSTORE TEMP 2 8 $(method3)
-		...
-	RETURN TEMP 1 END
-	*/
-	public Type visit(AllocationExpression n) {
-		String name = n.f1.f0.tokenImage;
-		ClassType type = classes.get(name);
-
-		String temp1 = e.newTemp();
-		String temp2 = e.newTemp();
+		final String temp1 = e.newTemp();
+		final String temp2 = e.newTemp();
 		e.emitOpen("/*new", name, "*/", "BEGIN");
-		e.emit("MOVE", temp1, "HALLOCATE", 
-			// plus one for virtual table
-			e.numToOffset(type.sizeOfClass() + 1));
-		e.emit("MOVE", temp2, "HALLOCATE",
-			e.numToOffset(type.sizeOfTable()));
+		e.emit("MOVE", temp1, "HALLOCATE",
+				// plus one for virtual table
+				e.numToOffset(type.sizeOfClass() + 1));
+		e.emit("MOVE", temp2, "HALLOCATE", e.numToOffset(type.sizeOfTable()));
 		e.emit("HSTORE", temp1, "0", temp2);
-		for (ClassType.Method method : type.dynamicMethods) {
-			e.emit("HSTORE", temp2, 
-				e.numToOffset(type.indexOfMethod(method.name)),
-				method.getLabel());
+		for (final ClassType.Method method : type.dynamicMethods) {
+			e.emit("HSTORE", temp2, e.numToOffset(type.indexOfMethod(method.name)), method.getLabel());
 		}
 		e.emitClose("RETURN", temp1, "END");
 
@@ -516,40 +484,36 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	}
 
 	/*
-	!a
-
-	MINUS 1 a
-	*/
-	public Type visit(NotExpression n) {
+	 * !a
+	 * 
+	 * MINUS 1 a
+	 */
+	public Type visit(final NotExpression n) {
 		e.emitBuf("MINUS", "1", "/* not */");
-		Type a = n.f1.accept(this);
+		final Type a = n.f1.accept(this);
 		if (!(a instanceof BoolType)) {
 			Info.panic("ArrayAllocationExpression");
 		}
 		return new BoolType();
 	}
 
-	public Type visit(BracketExpression n) {
+	public Type visit(final BracketExpression n) {
 		return n.f1.accept(this);
 	}
 
 	/**
-	if (a) b else c
-
-	CJUMP a L1
-		b
-	JUMP L2
-		L1 c
-	L2 NOOP
-	*/
-	public Type visit(IfStatement n) {
+	 * if (a) b else c
+	 * 
+	 * CJUMP a L1 b JUMP L2 L1 c L2 NOOP
+	 */
+	public Type visit(final IfStatement n) {
 		e.emitBuf("/* if */", "CJUMP");
-		Type a = n.f2.accept(this);
+		final Type a = n.f2.accept(this);
 		if (!(a instanceof BoolType)) {
 			Info.panic("IfStatement condition is not a BoolType");
 		}
-		String L1 = e.newLabel();
-		String L2 = e.newLabel();
+		final String L1 = e.newLabel();
+		final String L2 = e.newLabel();
 		e.emitBuf(L1);
 		e.emitOpen();
 		n.f4.accept(this);
@@ -561,78 +525,68 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		return null;
 	}
 
-	/** 
-	while (a) b
-
-	L1 NOOP
-	CJUMP a L2
-		b
-	JUMP L1
-	L2 NOOP
-	*/
-	public Type visit(WhileStatement n) {
-    	String L1 = e.newLabel();
-		String L2 = e.newLabel();
+	/**
+	 * while (a) b
+	 * 
+	 * L1 NOOP CJUMP a L2 b JUMP L1 L2 NOOP
+	 */
+	public Type visit(final WhileStatement n) {
+		final String L1 = e.newLabel();
+		final String L2 = e.newLabel();
 		e.emitFlush();
-    	e.emit("/* while */", L1, "NOOP"); 
-    	e.emitBuf("CJUMP");
-		Type a = n.f2.accept(this);
+		e.emit("/* while */", L1, "NOOP");
+		e.emitBuf("CJUMP");
+		final Type a = n.f2.accept(this);
 		if (!(a instanceof BoolType)) {
 			Info.panic("IfStatement condition is not a BoolType");
 		}
-    	e.emitBuf(L2);
-    	e.emitFlush();
-    	e.emitOpen();
+		e.emitBuf(L2);
+		e.emitFlush();
+		e.emitOpen();
 		n.f4.accept(this);
-    	e.emitClose("JUMP", L1);
-    	e.emit("/* endwhile */", L2, "NOOP");
+		e.emitClose("JUMP", L1);
+		e.emit("/* endwhile */", L2, "NOOP");
 		return null;
 	}
 
 	/*
-	a = b
-	*/
-	public Type visit(AssignmentStatement n) {
-		String name = n.f0.f0.tokenImage;
-		Type a = selfMethod.getTypeByName(name);
+	 * a = b
+	 */
+	public Type visit(final AssignmentStatement n) {
+		final String name = n.f0.f0.tokenImage;
+		final Type a = selfMethod.getTypeByName(name);
 		selfMethod.emitAssignByName(e, name);
-		Type b = n.f2.accept(this);
+		final Type b = n.f2.accept(this);
 		typeCastCheck(b, a);
 		return null;
 	}
 
 	/**
-	a[b] = c
-
-	HSTORE PLUS 
-		a 
-		TIMES 4 PLUS 1 
-		b 0 
-		c
+	 * a[b] = c
+	 * 
+	 * HSTORE PLUS a TIMES 4 PLUS 1 b 0 c
 	 */
-	public Type visit(ArrayAssignmentStatement n) {
+	public Type visit(final ArrayAssignmentStatement n) {
 		e.emitOpen("/* ArraryAssign */", "HSTORE", "PLUS");
-		Type a = n.f0.accept(this);
+		final Type a = n.f0.accept(this);
 		e.emitFlush();
 		e.emit("TIMES", e.numToOffset(1), "PLUS", "1");
 		e.emitBuf("/* [] */");
-		Type b = n.f2.accept(this);
+		final Type b = n.f2.accept(this);
 		e.emitBuf("0");
 		e.emitFlush();
 		e.emitBuf("/* = */");
-		Type c = n.f5.accept(this);
-		if (!(a instanceof ArrType
-			&& b instanceof IntType
-			&& c instanceof IntType)) {
+		final Type c = n.f5.accept(this);
+		if (!(a instanceof ArrType && b instanceof IntType && c instanceof IntType)) {
 			Info.panic("ArrayAssignmentStatement");
 		}
 		e.emitClose();
 		return null;
 	}
 
-	public Type visit(PrintStatement n) {
+	public Type visit(final PrintStatement n) {
 		e.emitOpen("PRINT");
-		Type a = n.f2.accept(this);
+		final Type a = n.f2.accept(this);
 		if (!(a instanceof IntType)) {
 			Info.panic("can not print " + a);
 		}
@@ -645,17 +599,17 @@ class TypeCheckResult {
 	ClassCollection classes;
 	Node root;
 
-	TypeCheckResult(ClassCollection classes, Node root) {
+	TypeCheckResult(final ClassCollection classes, final Node root) {
 		this.classes = classes;
 		this.root = root;
 	}
 }
 
 public class TypeCheck {
-	static TypeCheckResult TypeCheck(Emitter e) throws Exception {
-		MiniJavaParser parser = new MiniJavaParser(System.in);
-		ClassCollection classes = new ClassCollection();
-		Node root = parser.Goal();
+	static TypeCheckResult TypeCheck(final Emitter e) throws Exception {
+		final MiniJavaParser parser = new MiniJavaParser(System.in);
+		final ClassCollection classes = new ClassCollection();
+		final Node root = parser.Goal();
 
 		root.accept(new ScanForClassName(), classes);
 		root.accept(new ScanForSuperClassName(), classes);
@@ -666,20 +620,18 @@ public class TypeCheck {
 		return new TypeCheckResult(classes, root);
 	}
 
-	public static void main(String []args) throws Exception {
-		Emitter e = new Emitter();
+	public static void main(final String[] args) throws Exception {
+		final Emitter e = new Emitter();
 		if (Info.DEBUG) {
 			TypeCheck(e);
 		} else {
 			try {
-				TypeCheck(e);	
-			} catch (Exception e_) {
+				TypeCheck(e);
+			} catch (final Exception e_) {
+				System.out.println("Type error");
 				System.exit(0);
 			}
 		}
-
 		System.out.println("Program type checked successfully");
 	}
 }
-
-

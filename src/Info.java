@@ -5,7 +5,7 @@ class Info {
 	static final boolean DEBUG = false;
 
 	static void dd(String s) {
-		if (! DEBUG) {
+		if (!DEBUG) {
 			// pass
 		} else {
 			System.out.print(s);
@@ -13,7 +13,7 @@ class Info {
 	}
 
 	static void dln() {
-		if (! DEBUG) {
+		if (!DEBUG) {
 			// pass
 		} else {
 			System.out.println();
@@ -21,7 +21,7 @@ class Info {
 	}
 
 	static void dump(String... msg) {
-		if (! DEBUG) {
+		if (!DEBUG) {
 			// pass
 		} else {
 			for (String m : msg) {
@@ -34,7 +34,6 @@ class Info {
 
 	static void panic(String... msg) {
 		dump(msg);
-		System.out.println("Type error");
 		throw new RuntimeException("DEBUG");
 	}
 
@@ -50,7 +49,8 @@ class Emitter {
 
 	java.io.PrintStream out = System.out;
 
-	Emitter() {}
+	Emitter() {
+	}
 
 	Emitter(boolean mute) {
 		this.mute = mute;
@@ -95,7 +95,7 @@ class Emitter {
 			return;
 		}
 		if (buf.size() != 0) {
-			Info.panic("emit error");
+			this.emitFlush();
 		}
 		for (int i = 0; i < indentNum; i++) {
 			out.print("\t");
@@ -120,7 +120,32 @@ class Emitter {
 		tempNum += 1;
 		return "TEMP " + tempNum;
 	}
+
+	void setTempNum(int tempNum){
+		this.tempNum = tempNum;
+	}
 }
 
+class StringBuffer{
+	private Deque<String> buf;
+	private String delimiter;
 
+	StringBuffer() {
+		buf = new LinkedList<String>();
+		delimiter = " ";
+	}
 
+	void append(String... msg){
+		for (String m : msg) {
+			buf.add(m);
+		}
+	}
+
+	void prepend(String msg){
+		buf.addFirst(msg);
+	}
+	
+	public String toString(){
+		return String.join(delimiter, buf);
+	}
+}

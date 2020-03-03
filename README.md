@@ -4,21 +4,28 @@
 
 Implementation for the lesson Compiling Engineering (2020 Spring) in Peking University, adjusted from UCLA CS 132 Project..
 
-## Overview
+## Build and Testing
 
-MiniJava is a subset of Java. In this project, we are going to implement the MiniJava+ compiler. MiniJava+ is a superset of MiniJava but still a subset of Java. The key feature of MiniJava+ compiler is **bootstrapping**. That is, it is written in the source programming language that it intends to compile (i.e. MiniJava+).
+That's easy! Just type these in your terminal:
+
+```
+make && make build
+```
+
+Type `make test` to run all tests.
+
+## Overview
 
 The works are divided into five parts, each of which is a homework of the course:
 
-1. Semantics analysis
-2. IR generation (1)
-3. IR generation (2)
-4. Register allocation
-5. Native code generation
+1. Semantics analysis: type check a MiniJava program
+2. IR generation (1): compile a MiniJava program to Piglet
+3. IR generation (2): compile a Piglet program to Spiglet
+4. Register allocation: compile a Spiglet program to Kanga
+5. Native code generation: compile a Kanga program to MIPS
 
-We manage to achieve a minimal dependence. The tools used in this project are:
+Below are the tools used in this project. The binaries are under `/deps` folder.
 
-- Gradle: a build-automation system
 - [JavaCC](https://javacc.github.io/javacc/): an open-source parser generator and lexical analyzer generator written in the Java
 - [JTB](http://compilers.cs.ucla.edu/jtb/): a syntax tree builder to be used with JavaCC
 

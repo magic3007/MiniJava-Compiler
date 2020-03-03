@@ -8,6 +8,7 @@ JFLAGS = -g
 JTB = deps/jtb132.jar
 JAVACC = deps/javacc-7.0.5.jar
 PGI = deps/pgi.jar
+SPP = deps/spp.jar
 
 default: build
 
@@ -39,22 +40,27 @@ build: parser
 	$(JAVAC) -d $(OUT) \
 		--source-path $(SRC) \
 		$(SRC)/*.java
-	$(JAVA) -cp $(OUT) J2P < testcases/minijava/Factorial.java
 
 run: build
 	$(JAVA) -cp $(OUT) HelloWorld
 
 clean: cleanjavacc
 	rm -rf out
-	rm -rf syntaxtree vistor 
+	rm -rf syntaxtree vistor
 	rm -rf $(PARSER_DIR)
 
 
 TEST_MJ_DIR = testcases/minijava
 TEST_MJ     = $(wildcard $(TEST_MJ_DIR)/*.java)
 
-test: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
+TEST_PGI_DIR = testcases/piglet
+TEST_PGI	 = $(wildcard $(TEST_PGI_DIR)/*.pg)
+
+test: testmj testpg
 	@echo Congrats! You have passed all the test.
+
+testmj: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
+testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
 
 %.testmj: $(TEST_MJ_DIR)/%.java
 	@rm -rf $(OUT)/minijava/$*.class
@@ -62,14 +68,38 @@ test: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 	EXIT_CODE=$$?;\
 	if [ $$EXIT_CODE -eq 0 ] ; \
 		then echo "Program type checked successfully" > $(OUT)/std.output; \
-		else echo "Type error" > $(OUT)/std.output; fi; 
+		else echo "Type error" > $(OUT)/std.output; fi;
 	@$(JAVA) -cp $(OUT) TypeCheck < $< > $(OUT)/my.output
 	@diff $(OUT)/std.output $(OUT)/my.output
 	@echo [TypeCheck] passed! $<
 	@if [ -e $(OUT)/minijava/$*.class ]; then \
-		$(JAVA) -cp $(OUT)/minijava $* > $(OUT)/std.output; \
+		$(JAVA) -cp $(OUT)/minijava $* > $(OUT)/std.output 2>/dev/null; \
+		if [ $$? -ne 0 ] ; then echo "ERROR" >> $(OUT)/std.output; fi; \
 		$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -jar $(PGI) > $(OUT)/my.output;\
-		diff $(OUT)/std.output $(OUT)/my.output && \
-		echo "[   J2P   ] passed!" $<;\
-    fi
+		diff $(OUT)/std.output $(OUT)/my.output; \
+		if [ $$? -eq 0 ];  then \
+			echo "[   J2P   ] passed!" $<; \
+		else \
+			echo "[   J2P   ] failed!" $<; \
+			$(JAVA) -cp $(OUT) J2P < $< > $(OUT)/dump.pg && \
+			false; \
+		fi; \
+	fi
 
+%.testpg: $(TEST_PGI_DIR)/%.pg
+	@$(JAVA) -cp $(OUT) P2S < $< | $(JAVA) -jar $(SPP) > $(OUT)/my.output
+	@if [ $$? -ne 0 ]; then \
+		echo "[   P2S   ] failed!" $<; \
+		$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.spg && \
+		false; \
+	fi
+	@$(JAVA) -jar $(PGI) < $< > $(OUT)/std.output
+	@$(JAVA) -cp $(OUT) P2S < $< | $(JAVA) -jar $(PGI) > $(OUT)/my.output
+	@diff $(OUT)/std.output $(OUT)/my.output
+	@if [ $$? -eq 0 ]; then \
+		echo "[   P2S   ] passed!" $<; \
+	else \
+		echo "[   P2S   ] failed!" $<; \
+		$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.spg && \
+		false; \
+	fi
