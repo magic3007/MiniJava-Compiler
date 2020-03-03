@@ -96,7 +96,7 @@ class Emitter {
 			return;
 		}
 		if (buf.size() != 0) {
-			Info.panic("emit error");
+			this.emitFlush();
 		}
 		for (int i = 0; i < indentNum; i++) {
 			out.print("\t");
