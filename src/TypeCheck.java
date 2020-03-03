@@ -294,12 +294,13 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	/**
 	 * a.length
 	 * 
-	 * BEGIN HLOAD TEMP 1 a RETURN TEMP 1 END
+	 * BEGIN HLOAD TEMP 1 a 0 RETURN TEMP 1 END
 	 */
 	public Type visit(final ArrayLength n) {
 		final String temp1 = e.newTemp();
 		e.emitOpen("/* .length */", "HLOAD", temp1);
 		final Type a = n.f0.accept(this);
+		e.emitBuf("0");
 		e.emitClose("RETURN", temp1, "END");
 		if (a instanceof ArrType) {
 			return new IntType();
@@ -631,7 +632,6 @@ public class TypeCheck {
 				System.exit(0);
 			}
 		}
-
 		System.out.println("Program type checked successfully");
 	}
 }
