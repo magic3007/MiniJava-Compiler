@@ -3,8 +3,8 @@ class ErrorNull{
     	A x; A y;
     	int ret;
     	x = new A();
-    	y = x.haha();
-    	ret = y.foo();
+    	// y = x.haha();
+    	// ret = y.foo();
     }
 }
 
