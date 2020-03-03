@@ -34,7 +34,6 @@ class Info {
 
 	static void panic(String... msg) {
 		dump(msg);
-		System.out.println("Type error");
 		throw new RuntimeException("DEBUG");
 	}
 
@@ -120,5 +119,33 @@ class Emitter {
 	String newTemp() {
 		tempNum += 1;
 		return "TEMP " + tempNum;
+	}
+
+	void setTempNum(int tempNum){
+		this.tempNum = tempNum;
+	}
+}
+
+class StringBuffer{
+	private Deque<String> buf;
+	private String delimiter;
+
+	StringBuffer() {
+		buf = new LinkedList<String>();
+		delimiter = " ";
+	}
+
+	void append(String... msg){
+		for (String m : msg) {
+			buf.add(m);
+		}
+	}
+
+	void prepend(String msg){
+		buf.addFirst(msg);
+	}
+	
+	public String toString(){
+		return String.join(delimiter, buf);
 	}
 }
