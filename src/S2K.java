@@ -3,7 +3,11 @@ import spiglet.syntaxtree.*;
 import spiglet.visitor.*;
 import java.util.*;
 
-class SpigletAST {}
+///// RIG
+
+
+
+////////////////////////////////////////////////////////////////
 
 abstract class SimpleExp {
 	abstract public String getName();
@@ -59,7 +63,7 @@ class TempReg extends SimpleExp {
 		return r;
 	}
 
-	static public void clearCache() {
+	static public void clear() {
 		cached.clear();
 	}
 
@@ -90,12 +94,18 @@ class TempReg extends SimpleExp {
 		if (!(o instanceof TempReg)) {
 			return false;
 		}
-		return this.num == ((TempReg) o).num;
+		if (this.num == ((TempReg) o).num) {
+			if (o != this) {
+				Info.panic("cache internel error");
+			}
+			return true;
+		}
+		return false;
 	}
 
 	public String getName() {
 		if (alloc == -1) {
-			return "TEMP " + num;
+			return "/*" + num + "*/";
 		} else {
 			return REG_NAME[alloc] + "/*" + num + "*/";
 		}
@@ -137,23 +147,34 @@ class ProcBlock {
 			"[" + numOfParams + "]",
 			"[" + stackSize + "]",
 			"[" + numCallSlots + "]");
-		for (Instruction i = dummyFirst.next; 
-			i != dummyLast; i = i.next) {
-			if (i.label == null) {
-				i.emit(e);
-			} else {
+		for (Instruction i = dummyFirst.next; i != dummyLast; i = i.next) {
+			if (i.label != null) {
 				e.emitBuf(i.label);
-				i.emit(e);
 			}
+			i.emitLiveness(e);
 		}
 		e.emitClose("END");
 	}
 
 	void analyzeJump() {
-		for (Instruction i = dummyFirst.next;
-			i != dummyLast; i = i.next) {
-			i.analyzeJump();
+		for (Instruction i = dummyFirst.next; i != dummyLast; i = i.next) {
+			i.analyzeJump(label2instr);
 		}
+	}
+
+	void analyzeLiveness() {
+		boolean updated = true;
+		while (updated) {
+			updated = false;
+			for (Instruction i = dummyLast.prev; i != dummyFirst; i = i.prev) {
+				updated = i.analyzeLiveness();
+			}	
+		}
+	}
+
+	void analyze() {
+		analyzeJump();
+		analyzeLiveness();
 	}
 }
 
@@ -164,6 +185,38 @@ class Instruction {
 	Set<TempReg> use;
 	Set<TempReg> in;
 	Set<TempReg> out;
+
+	private boolean analyzeLivenessUpdate(Instruction next) {
+		boolean updated = false;
+		for (TempReg r : next.in) {
+			if (!def.contains(r)) {
+				if (!in.contains(r)) {
+					in.add(r);
+					updated = true;
+				}
+			}
+			if (!out.contains(r)) {
+				out.add(r);
+				updated = true;
+			}
+		}
+		return updated;
+	}
+
+	boolean analyzeLiveness() {
+		boolean updated = false;
+		updated |= analyzeLivenessUpdate(next);
+		if (jump != null) {
+			updated |= analyzeLivenessUpdate(jump);
+		}
+		for (TempReg r : use) {
+			if (!in.contains(r)) {
+				in.add(r);
+				updated = true;
+			}
+		}
+		return updated;
+	}
 
 	Instruction() {
 		def = new HashSet<TempReg>();
@@ -179,7 +232,7 @@ class Instruction {
 	// only meaningful when it's a jump instruction
 	Instruction jump;
 
-	void analyzeJump() {
+	void analyzeJump(Map<String, Instruction> label2instr) {
 		// the 'jump' subclasses override this method
 	}
 
@@ -200,6 +253,19 @@ class Instruction {
 		next = instr.next;
 		instr.next.prev = this;
 		instr.next = this;
+	}
+
+	void emitLiveness(Emitter e) {
+		e.emitBuf("//in:");
+		for (TempReg r : in) {
+			e.emitBuf(Integer.toString(r.num));
+		}
+		emit(e);
+		e.emitBuf("//out:");
+		for (TempReg r : out) {
+			e.emitBuf(Integer.toString(r.num));
+		}
+		e.emit("//----------------------------------------------");
 	}
 
 	void emit(Emitter e) {
@@ -262,6 +328,14 @@ class InstrJump extends Instruction {
 		this.l = l;
 	}
 
+	void analyzeJump(Map<String, Instruction> label2instr) {
+		Instruction j = label2instr.get(l);
+		if (j == null) {
+			Info.panic("analyzeJump failed, can not find " + l);
+		}
+		jump = j;
+	}
+
 	void emit(Emitter e) {
 		if (t == null) {
 			e.emit("JUMP", l);
@@ -282,6 +356,9 @@ class InstrStore extends Instruction {
 		this.base = base;
 		this.off = off;
 		this.val = val;
+
+		use.add(base);
+		use.add(val);
 	}
 
 	void emit(Emitter e) {
@@ -300,10 +377,13 @@ class InstrLoad extends Instruction {
 		this.reg = reg;
 		this.base = base;
 		this.off = off;
+
+		use.add(base);
+		def.add(reg);
 	}
 
 	void emit(Emitter e) {
-		e.emit("HSTORE", reg.getName(), base.getName(), off);
+		e.emit("HLOAD", reg.getName(), base.getName(), off);
 	}
 }
 
@@ -398,17 +478,23 @@ class GetSimpleVisitor extends GJNoArguDepthFirst<SimpleExp> {
 }
 
 class SpigletVisitor extends DepthFirstVisitor {
-	List<ProcBlock> procs;
 	ProcBlock selfProc;
+	Emitter e;
 
-	SpigletVisitor(List<ProcBlock> procs) {
-		this.procs = procs;
+	void emit() {
+		selfProc.analyze();
+		selfProc.emit(e);
+		TempReg.clear();
+	}
+
+	SpigletVisitor(Emitter e) {
+		this.e = e;
 	}
 
 	public void visit(Goal n) {
 		selfProc = new ProcBlock("MAIN");
 		n.f1.accept(this);
-		procs.add(selfProc);
+		emit();
 		n.f3.accept(this);
 	}
 
@@ -417,7 +503,7 @@ class SpigletVisitor extends DepthFirstVisitor {
 		selfProc = new ProcBlock(name);
 		selfProc.numOfParams = Integer.parseInt(n.f2.f0.tokenImage);
 		n.f4.accept(this);
-		procs.add(selfProc);
+		emit();
 	}
 
 	public void visit(Label n) {
@@ -571,12 +657,8 @@ public class S2K {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		List<ProcBlock> procedures = new ArrayList<ProcBlock>();
-		root.accept(new SpigletVisitor(procedures));
 		Emitter e = new Emitter(false);
-		for (ProcBlock p : procedures) {
-			p.emit(e);
-		}
+		root.accept(new SpigletVisitor(e));
 	}
 
 }
