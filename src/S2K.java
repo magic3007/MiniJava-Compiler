@@ -131,6 +131,73 @@ class Instruction {
 	}
 }
 
+//  the AST for kanga
+
+class KangaSimple {
+	TempReg reg;
+	String simple;
+
+	KangaSimple(TempReg reg) {
+		this.reg = reg;
+	}
+
+	KangaSimple(String simple) {
+		this.simple = simple;
+	}
+
+	public String toString() {
+		if (reg == null) {
+			return simple;
+		} else {
+			return reg.getName();
+		}
+	}
+}
+
+/* Exp = HAllocate | BinOp | SimpleExp
+ * HAllocate = HALLOCATE SimpleExp
+ * BinOp = op Reg SimpleExp
+ */
+class KangaExp {
+	KangaSimple simple;
+
+	// BinOp: < + - *
+	// HAllocate: a
+	String operator;
+	TempReg r1, r2;
+
+	KangaExp(KangaSimple simple, boolean is_alloc) {
+		this.simple = simple;
+		if (is_alloc) operator = "alloc";
+		else operator = "simple";
+	}
+
+	KangaExp(TempReg r1, String operator, TempReg r2) {
+		this.r1 = r1;
+		this.r2 = r2;
+		this.operator = operator;
+	}
+
+	KangaExp(TempReg r1, String operator, KangaSimple simple) {
+		this.r1 = r1;
+		this.operator = operator;
+		this.simple = simple;
+	}
+
+	public String toString() {
+		if (operator.equals("simple")) {
+			return simple.toString();
+		}
+		if (operator.equals("alloc")) {
+			return "HALLOCATE" + simple.toString();
+		}
+		if (simple == null) {
+			return operator + " " + r1.getName() + " " + r2.getName();
+		}
+		return operator + " " + r1.getName() + " " + simple.toString();
+	}
+}
+
 class InstrNoop extends Instruction {
 	void emit(Emitter e) {
 		e.emit("NOOP");
@@ -143,6 +210,9 @@ class InstrError extends Instruction {
 	}
 }
 
+/* JUMP L1
+ * CJUMP R1 L1
+ */
 class InstrJump extends Instruction {
 	// it's a unconditional jump iff t == null
 	TempReg t;
@@ -162,6 +232,8 @@ class InstrJump extends Instruction {
 	}
 }
 
+/* HSTORE R1 integer R2
+ */
 class InstrStore extends Instruction {
 	TempReg base;
 	String off;
@@ -178,6 +250,8 @@ class InstrStore extends Instruction {
 	}
 }
 
+/* HLOAD R1 R2 integer
+ */
 class InstrLoad extends Instruction {
 	TempReg reg;
 	TempReg base;
@@ -194,6 +268,7 @@ class InstrLoad extends Instruction {
 	}
 }
 
+/* ALOAD R1 SPILLEDARG integer */
 class InstrALoad extends Instruction {
 	TempReg reg;
 	int os;
@@ -204,11 +279,38 @@ class InstrALoad extends Instruction {
 	}
 
 	void emit(Emitter e) {
-		e.emit("ALOAD", reg.getName(), Integer.toString(os));
+		e.emit("ALOAD", reg.getName(), "SPILLEDARG", Integer.toString(os));
 	}
 }
 
-class Procedure {
+/* ASTORE SPILLEDARG integer R1 */
+class InstrAStore extends Instruction {
+	int os;
+	TempReg reg;
+
+	InstrAStore(int os, TempReg reg) {
+		this.os = os;
+		this.reg = reg;
+	}
+
+	void emit(Emitter e) {
+		e.emit("ASTORE", "SPILLEDARG", Integer.toString(os), reg.getName());
+	}
+}
+
+class InstrCall extends Instruction {
+	KangaSimple simple;
+
+	InstrCall(KangaSimple simple) {
+		this.simple = simple;
+	}
+
+	void emit(Emitter e) {
+		e.emit("CALL", simple.toString());
+	}
+}
+
+class ProcBlock {
 	int numOfParams;
 	int stackSize;
 	int numCallSlots;
@@ -218,7 +320,7 @@ class Procedure {
 	Instruction dummyLast;
 	SimpleExp retval;
 
-	Procedure(String name) {
+	ProcBlock(String name) {
 		this.name = name;
 		label2instr = new HashMap<String, Instruction>();
 		dummyFirst = new InstrNoop();
@@ -281,30 +383,30 @@ class GetSimpleVisitor extends GJNoArguDepthFirst<SimpleExp> {
 }
 
 class SpigletVisitor extends DepthFirstVisitor {
-	List<Procedure> procs;
-	Procedure selfProc;
+	List<ProcBlock> procs;
+	ProcBlock selfProc;
 
-	SpigletVisitor(List<Procedure> procs) {
+	SpigletVisitor(List<ProcBlock> procs) {
 		this.procs = procs;
 	}
 
 	public void visit(Goal n) {
-		selfProc = new Procedure("MAIN");
+		selfProc = new ProcBlock("MAIN");
 		n.f1.accept(this);
 		procs.add(selfProc);
 		n.f3.accept(this);
 	}
 
 	public void visit(Procedure n) {
-		String name = n.f0.tokenImage;
-		selfProc = new Procedure(name);
+		String name = n.f0.f0.tokenImage;
+		selfProc = new ProcBlock(name);
 		selfProc.numOfParams = Integer.parseInt(n.f2.f0.tokenImage);
 		n.f4.accept(this);
 	}
 
 	public void visit(Label n) {
 		String name = n.f0.tokenImage;
-		selfProc.label2instr.set(name, selfProc.lastIntr());
+		selfProc.label2instr.put(name, selfProc.lastInstr());
 	}
 
 	// hack NodeSequence in order to visit first the instruction
@@ -338,7 +440,7 @@ class SpigletVisitor extends DepthFirstVisitor {
 	}
 
 	public void visit(CJumpStmt n) {
-		TempReg t = new TempReg(n.f1);
+		TempReg t = TempReg.newT(n.f1);
 		String l = n.f2.f0.tokenImage;
 		selfProc.newInstr(new InstrJump(t, l));
 	}
@@ -349,15 +451,15 @@ class SpigletVisitor extends DepthFirstVisitor {
 	}
 
 	public void visit(HStoreStmt n) {
-		TempReg r1 = new TempReg(n.f1);
+		TempReg r1 = TempReg.newT(n.f1);
 		String l = n.f2.f0.tokenImage;
-		TempReg r2 = new TempReg(n.f3);
+		TempReg r2 = TempReg.newT(n.f3);
 		selfProc.newInstr(new InstrStore(r1, l, r2));
 	}
 
 	public void visit(HLoadStmt n) {
-		TempReg r1 = new TempReg(n.f1);
-		TempReg r2 = new TempReg(n.f2);
+		TempReg r1 = TempReg.newT(n.f1);
+		TempReg r2 = TempReg.newT(n.f2);
 		String l = n.f3.f0.tokenImage;
 		selfProc.newInstr(new InstrLoad(r1, r2, l));
 	}
@@ -366,7 +468,7 @@ class SpigletVisitor extends DepthFirstVisitor {
 	TempReg selfTemp;
 
 	public void visit(MoveStmt n) {
-		selfTemp = new TempReg(n.f1);
+		selfTemp = TempReg.newT(n.f1);
 		n.f2.accept(this);
 	}
 
@@ -439,20 +541,24 @@ class SpigletVisitor extends DepthFirstVisitor {
       n.f0.accept(this);
    }
 
-
-
 }
 
 public class S2K {
 
 	public static void main(String[] args) {
 		SpigletParser parser = new SpigletParser(System.in);
-		Node root = parser.Goal();
-		LIst<Procedure> procedures = new ArrayList<Procedure>();
-		root.visit(new SpigletVisitor(procedures));
+		Node root = null;
+		try {
+			root = parser.Goal();
+		} catch (ParseException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		List<ProcBlock> procedures = new ArrayList<ProcBlock>();
+		root.accept(new SpigletVisitor(procedures));
 		Emitter e = new Emitter();
-		for (Procedure p : procedures) {
-			p.genKanga();
+		for (ProcBlock p : procedures) {
+//			p.genKanga();
 		}
 	}
 
