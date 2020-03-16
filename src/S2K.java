@@ -9,6 +9,7 @@ abstract class SimpleExp {
 	abstract public String getName();
 }
 
+// Label or Literal
 class SimpleStringExp extends SimpleExp {
 	String name;
 
@@ -34,6 +35,7 @@ class TempReg extends SimpleExp {
 		"a0", "a1", "a2", "a3",
 		"v0", "v1"
 	};
+	int alloc = -1;
 
 	private static int tCounter = 10000000;
 
@@ -57,6 +59,10 @@ class TempReg extends SimpleExp {
 		return r;
 	}
 
+	static public void clearCache() {
+		cached.clear();
+	}
+
 	static TempReg newT(Temp n) {
 		String i = n.f1.f0.tokenImage;
 		return init(Integer.parseInt(i));
@@ -64,6 +70,16 @@ class TempReg extends SimpleExp {
 
 	static TempReg newT(int num) {
 		return init(num);
+	}
+
+	static TempReg newT(String name) {
+		for (int i = 0; i < NUM_REG; i++) {
+			if (REG_NAME[i].equals(name)) {
+				return newT(i);
+			}
+		}
+		Info.panic("newT() falied for " + name);
+		return null;
 	}
 
 	private TempReg(int num) {
@@ -78,7 +94,66 @@ class TempReg extends SimpleExp {
 	}
 
 	public String getName() {
-		return "TEMP " + num;
+		if (alloc == -1) {
+			return "TEMP " + num;
+		} else {
+			return REG_NAME[alloc] + "/*" + num + "*/";
+		}
+	}
+}
+
+class ProcBlock {
+	int numOfParams;
+	int stackSize;
+	int numCallSlots;
+	String name;
+	Map<String, Instruction> label2instr;
+	Instruction dummyFirst;
+	Instruction dummyLast;
+
+	ProcBlock(String name) {
+		this.name = name;
+		label2instr = new HashMap<String, Instruction>();
+		dummyFirst = new InstrNoop();
+		dummyLast = new InstrNoop();
+		dummyLast.prev = dummyFirst;
+		dummyFirst.next = dummyLast;
+	}
+
+	void newInstr(Instruction instr) {
+		instr.insertBefore(dummyLast);
+	}
+
+	Instruction lastInstr() {
+		if (dummyFirst == dummyLast) {
+			Info.panic("lastInstr()");
+		}
+
+		return dummyLast.prev;
+	}
+
+	void emit(Emitter e) {
+		e.emitOpen(name,
+			"[" + numOfParams + "]",
+			"[" + stackSize + "]",
+			"[" + numCallSlots + "]");
+		for (Instruction i = dummyFirst.next; 
+			i != dummyLast; i = i.next) {
+			if (i.label == null) {
+				i.emit(e);
+			} else {
+				e.emitBuf(i.label);
+				i.emit(e);
+			}
+		}
+		e.emitClose("END");
+	}
+
+	void analyzeJump() {
+		for (Instruction i = dummyFirst.next;
+			i != dummyLast; i = i.next) {
+			i.analyzeJump();
+		}
 	}
 }
 
@@ -97,6 +172,7 @@ class Instruction {
 		out = new HashSet<TempReg>();
 	}
 
+	String label;
 	Instruction prev;
 	Instruction next;
 
@@ -133,68 +209,31 @@ class Instruction {
 
 //  the AST for kanga
 
-class KangaSimple {
-	TempReg reg;
-	String simple;
-
-	KangaSimple(TempReg reg) {
-		this.reg = reg;
-	}
-
-	KangaSimple(String simple) {
-		this.simple = simple;
-	}
-
-	public String toString() {
-		if (reg == null) {
-			return simple;
-		} else {
-			return reg.getName();
-		}
-	}
-}
-
 /* Exp = HAllocate | BinOp | SimpleExp
  * HAllocate = HALLOCATE SimpleExp
  * BinOp = op Reg SimpleExp
  */
 class KangaExp {
-	KangaSimple simple;
-
 	// BinOp: < + - *
 	// HAllocate: a
+	SimpleExp r1, r2;
 	String operator;
-	TempReg r1, r2;
 
-	KangaExp(KangaSimple simple, boolean is_alloc) {
-		this.simple = simple;
-		if (is_alloc) operator = "alloc";
-		else operator = "simple";
+	KangaExp(SimpleExp simple) {
+		this.r1 = simple;
 	}
 
-	KangaExp(TempReg r1, String operator, TempReg r2) {
+	KangaExp(SimpleExp r1, String operator, SimpleExp r2) {
 		this.r1 = r1;
+		this.operator = operator;
 		this.r2 = r2;
-		this.operator = operator;
-	}
-
-	KangaExp(TempReg r1, String operator, KangaSimple simple) {
-		this.r1 = r1;
-		this.operator = operator;
-		this.simple = simple;
 	}
 
 	public String toString() {
-		if (operator.equals("simple")) {
-			return simple.toString();
+		if (operator == null) {
+			return "HALLOCATE " + r1.getName();
 		}
-		if (operator.equals("alloc")) {
-			return "HALLOCATE" + simple.toString();
-		}
-		if (simple == null) {
-			return operator + " " + r1.getName() + " " + r2.getName();
-		}
-		return operator + " " + r1.getName() + " " + simple.toString();
+		return operator + " " + r1.getName() + " " + r2.getName();
 	}
 }
 
@@ -299,9 +338,9 @@ class InstrAStore extends Instruction {
 }
 
 class InstrCall extends Instruction {
-	KangaSimple simple;
+	SimpleExp simple;
 
-	InstrCall(KangaSimple simple) {
+	InstrCall(SimpleExp simple) {
 		this.simple = simple;
 	}
 
@@ -310,53 +349,29 @@ class InstrCall extends Instruction {
 	}
 }
 
-class ProcBlock {
-	int numOfParams;
-	int stackSize;
-	int numCallSlots;
-	String name;
-	Map<String, Instruction> label2instr;
-	Instruction dummyFirst;
-	Instruction dummyLast;
-	SimpleExp retval;
+class InstrPrint extends Instruction {
+	SimpleExp simple;
 
-	ProcBlock(String name) {
-		this.name = name;
-		label2instr = new HashMap<String, Instruction>();
-		dummyFirst = new InstrNoop();
-		dummyLast = new InstrNoop();
-	}
-
-	void newInstr(Instruction instr) {
-		instr.insertBefore(dummyLast);
-	}
-
-	Instruction lastInstr() {
-		if (dummyFirst == dummyLast) {
-			Info.panic("lastInstr()");
-		}
-
-		return dummyLast.prev;
+	InstrPrint(SimpleExp simple) {
+		this.simple = simple;
 	}
 
 	void emit(Emitter e) {
-		e.emitOpen(name,
-			"[" + numOfParams + "]",
-			"[" + stackSize + "]",
-			"[" + numCallSlots + "]");
-		for (Instruction i = dummyFirst.next; 
-			i != dummyLast; i = i.next) {
-			i.emit(e);
-		}
-		e.emit("MOVE", "v0", retval.getName());
-		e.emitClose("END");
+		e.emit("PRINT", simple.toString());
+	}
+}
+
+class InstrPass extends Instruction {
+	int os;
+	TempReg reg;
+
+	InstrPass(int os, TempReg reg) {
+		this.os = os;
+		this.reg = reg;
 	}
 
-	void analyzeJump() {
-		for (Instruction i = dummyFirst.next;
-			i != dummyLast; i = i.next) {
-			i.analyzeJump();
-		}
+	void emit(Emitter e) {
+		e.emit("PASSARG", Integer.toString(os), reg.getName());
 	}
 }
 
@@ -402,11 +417,13 @@ class SpigletVisitor extends DepthFirstVisitor {
 		selfProc = new ProcBlock(name);
 		selfProc.numOfParams = Integer.parseInt(n.f2.f0.tokenImage);
 		n.f4.accept(this);
+		procs.add(selfProc);
 	}
 
 	public void visit(Label n) {
 		String name = n.f0.tokenImage;
 		selfProc.label2instr.put(name, selfProc.lastInstr());
+		selfProc.lastInstr().label = name;
 	}
 
 	// hack NodeSequence in order to visit first the instruction
@@ -488,13 +505,13 @@ class SpigletVisitor extends DepthFirstVisitor {
     * f3 -> SimpleExp()
     * f4 -> "END"
     */
-   public void visit(StmtExp n) {
-      n.f0.accept(this);
-      n.f1.accept(this);
-      n.f2.accept(this);
-      n.f3.accept(this);
-      n.f4.accept(this);
-   }
+	public void visit(StmtExp n) {
+		n.f0.accept(this);
+		n.f1.accept(this);
+		n.f2.accept(this);
+		n.f3.accept(this);
+		n.f4.accept(this);
+	}
 
    /**
     * f0 -> "CALL"
@@ -556,9 +573,9 @@ public class S2K {
 		}
 		List<ProcBlock> procedures = new ArrayList<ProcBlock>();
 		root.accept(new SpigletVisitor(procedures));
-		Emitter e = new Emitter();
+		Emitter e = new Emitter(false);
 		for (ProcBlock p : procedures) {
-//			p.genKanga();
+			p.emit(e);
 		}
 	}
 
