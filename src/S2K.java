@@ -48,7 +48,7 @@ class TempReg extends SimpleExp {
 		return new TempReg(tCounter);
 	}
 
-	int num;
+	private int num;
 
 	static Map<Integer, TempReg> cached =
 		new HashMap<Integer, TempReg>();
@@ -79,7 +79,9 @@ class TempReg extends SimpleExp {
 	static TempReg newT(String name) {
 		for (int i = 0; i < NUM_REG; i++) {
 			if (REG_NAME[i].equals(name)) {
-				return newT(i);
+				TempReg r = newTemp();
+				r.alloc = i;
+				return r;
 			}
 		}
 		Info.panic("newT() falied for " + name);
@@ -103,7 +105,16 @@ class TempReg extends SimpleExp {
 		return false;
 	}
 
+	int getNum() {
+		int num = this.num;
+		if (num >= 10000000) {
+			num = -(num - 10000000);
+		}
+		return num;
+	}
+
 	public String getName() {
+		int num = getNum();
 		if (alloc == -1) {
 			return "/*" + num + "*/";
 		} else {
@@ -258,12 +269,12 @@ class Instruction {
 	void emitLiveness(Emitter e) {
 		e.emitBuf("//in:");
 		for (TempReg r : in) {
-			e.emitBuf(Integer.toString(r.num));
+			e.emitBuf(Integer.toString(r.getNum()));
 		}
 		emit(e);
 		e.emitBuf("//out:");
 		for (TempReg r : out) {
-			e.emitBuf(Integer.toString(r.num));
+			e.emitBuf(Integer.toString(r.getNum()));
 		}
 		e.emit("//----------------------------------------------");
 	}
@@ -297,9 +308,34 @@ class KangaExp {
 
 	public String toString() {
 		if (operator == null) {
+			return r1.getName();
+		}
+		if ("HALLOCATE".equals(operator)) {
 			return "HALLOCATE " + r1.getName();
 		}
 		return operator + " " + r1.getName() + " " + r2.getName();
+	}
+}
+
+class InstrMove extends Instruction {
+	TempReg r;
+	KangaExp exp;
+
+	InstrMove(TempReg r, KangaExp exp) {
+		this.r = r;
+		this.exp = exp;
+
+		def.add(r);
+		if (exp.r1 instanceof TempReg) {
+			use.add((TempReg) exp.r1);
+		}
+		if (exp.r2 instanceof TempReg) {
+			use.add((TempReg) exp.r2);
+		}
+	}
+
+	void emit(Emitter e) {
+		e.emit("MOVE", r.getName(), exp.toString());
 	}
 }
 
@@ -477,6 +513,33 @@ class GetSimpleVisitor extends GJNoArguDepthFirst<SimpleExp> {
 	}
 }
 
+class GetExpVisitor extends GJNoArguDepthFirst<KangaExp> {
+	public KangaExp visit(Exp n) {
+		return n.f0.accept(this);
+	}
+
+	public KangaExp visit(HAllocate n) {
+		SimpleExp simple = n.f1.accept(new GetSimpleVisitor());
+		return new KangaExp(simple, "HALLOCATE", null);
+	}
+
+	public KangaExp visit(BinOp n) {
+		SimpleExp o1 = n.f1.accept(new GetSimpleVisitor());
+		SimpleExp o2 = n.f2.accept(new GetSimpleVisitor());
+		String op = ((NodeToken) (n.f0.f0.choice)).tokenImage;
+		return new KangaExp(o1, op, o2);
+	}
+
+	public KangaExp visit(spiglet.syntaxtree.SimpleExp n) {
+		SimpleExp o1 = n.accept(new GetSimpleVisitor());
+		return new KangaExp(o1);
+	}
+
+	public KangaExp visit(Call n) {
+		return new KangaExp(TempReg.newT("v0"));
+	}
+}
+
 class SpigletVisitor extends DepthFirstVisitor {
 	ProcBlock selfProc;
 	Emitter e;
@@ -567,12 +630,10 @@ class SpigletVisitor extends DepthFirstVisitor {
 		selfProc.newInstr(new InstrLoad(r1, r2, l));
 	}
 
-	// only for MOVE parsing
-	TempReg selfTemp;
-
 	public void visit(MoveStmt n) {
-		selfTemp = TempReg.newT(n.f1);
-		n.f2.accept(this);
+		TempReg r1 = TempReg.newT(n.f1);
+		KangaExp e = n.f2.accept(new GetExpVisitor());
+		selfProc.newInstr(new InstrMove(r1, e));
 	}
 
    /**
@@ -592,11 +653,10 @@ class SpigletVisitor extends DepthFirstVisitor {
     * f4 -> "END"
     */
 	public void visit(StmtExp n) {
-		n.f0.accept(this);
 		n.f1.accept(this);
-		n.f2.accept(this);
-		n.f3.accept(this);
-		n.f4.accept(this);
+		SimpleExp ret = n.f3.accept(new GetSimpleVisitor());
+		KangaExp e = new KangaExp(ret);
+		selfProc.newInstr(new InstrMove(TempReg.newT("v0"), e));
 	}
 
    /**
@@ -634,15 +694,6 @@ class SpigletVisitor extends DepthFirstVisitor {
       n.f2.accept(this);
    }
 
-   /**
-    * f0 -> "LT"
-    *       | "PLUS"
-    *       | "MINUS"
-    *       | "TIMES"
-    */
-   public void visit(Operator n) {
-      n.f0.accept(this);
-   }
 
 }
 
