@@ -459,10 +459,16 @@ class InstrCall extends Instruction {
 
 	InstrCall(SimpleExp simple) {
 		this.simple = simple;
+		
+		if (simple instanceof TempReg) {
+			use.add((TempReg) simple);
+		}
+
+		def.add(TempReg.newT("v0"));
 	}
 
 	void emit(Emitter e) {
-		e.emit("CALL", simple.toString());
+		e.emit("CALL", simple.getName());
 	}
 }
 
@@ -478,13 +484,15 @@ class InstrPrint extends Instruction {
 	}
 }
 
-class InstrPass extends Instruction {
+class InstrPassArg extends Instruction {
 	int os;
 	TempReg reg;
 
-	InstrPass(int os, TempReg reg) {
+	InstrPassArg(int os, TempReg reg) {
 		this.os = os;
 		this.reg = reg;
+
+		use.add(reg);
 	}
 
 	void emit(Emitter e) {
@@ -515,6 +523,12 @@ class GetSimpleVisitor extends GJNoArguDepthFirst<SimpleExp> {
 }
 
 class GetExpVisitor extends GJNoArguDepthFirst<KangaExp> {
+	ProcBlock selfProc;
+
+	GetExpVisitor(ProcBlock selfProc) {
+		this.selfProc = selfProc;
+	}
+
 	public KangaExp visit(Exp n) {
 		return n.f0.accept(this);
 	}
@@ -536,7 +550,28 @@ class GetExpVisitor extends GJNoArguDepthFirst<KangaExp> {
 		return new KangaExp(o1);
 	}
 
+	int i = 0;
+
+	public KangaExp visit(Temp n) {
+		TempReg r = (TempReg) n.accept(new GetSimpleVisitor());
+		KangaExp e = new KangaExp(r);
+		if (i < 4) {
+			selfProc.newInstr(new InstrMove(TempReg.newT("a" + i), e));
+		} else {
+			selfProc.newInstr(new InstrPassArg(i - 3, r));
+		}
+
+		i += 1;
+		if (i > selfProc.numCallSlots) {
+			selfProc.numCallSlots = i;
+		}
+		return null;
+	}
+
 	public KangaExp visit(Call n) {
+		SimpleExp o1 = n.f1.accept(new GetSimpleVisitor());
+		n.f3.accept(this);
+		selfProc.newInstr(new InstrCall(o1));
 		return new KangaExp(TempReg.newT("v0"));
 	}
 }
@@ -566,6 +601,13 @@ class SpigletVisitor extends DepthFirstVisitor {
 		String name = n.f0.f0.tokenImage;
 		selfProc = new ProcBlock(name);
 		selfProc.numOfParams = Integer.parseInt(n.f2.f0.tokenImage);
+		for (int i = 0; i < Math.min(selfProc.numOfParams, 4); i++) {
+			KangaExp e = new KangaExp(TempReg.newT("a" + i));
+			selfProc.newInstr(new InstrMove(TempReg.newT(i), e));
+		}
+		for (int i = 4; i < selfProc.numOfParams; i++) {
+			selfProc.newInstr(new InstrALoad(TempReg.newT(i), i - 4));
+		}
 		n.f4.accept(this);
 		emit();
 	}
@@ -633,7 +675,7 @@ class SpigletVisitor extends DepthFirstVisitor {
 
 	public void visit(MoveStmt n) {
 		TempReg r1 = TempReg.newT(n.f1);
-		KangaExp e = n.f2.accept(new GetExpVisitor());
+		KangaExp e = n.f2.accept(new GetExpVisitor(selfProc));
 		selfProc.newInstr(new InstrMove(r1, e));
 	}
 
