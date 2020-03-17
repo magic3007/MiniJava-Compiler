@@ -41,7 +41,8 @@ class TempReg extends SimpleExp {
 	};
 	int alloc = -1;
 
-	private static int tCounter = 10000000;
+	static final int SPECIAL_REG = 10000000;
+	private static int tCounter = SPECIAL_REG + NUM_REG;
 
 	static TempReg newTemp() {
 		tCounter += 1;
@@ -79,7 +80,7 @@ class TempReg extends SimpleExp {
 	static TempReg newT(String name) {
 		for (int i = 0; i < NUM_REG; i++) {
 			if (REG_NAME[i].equals(name)) {
-				TempReg r = newTemp();
+				TempReg r = newT(SPECIAL_REG + i);
 				r.alloc = i;
 				return r;
 			}
@@ -107,8 +108,8 @@ class TempReg extends SimpleExp {
 
 	int getNum() {
 		int num = this.num;
-		if (num >= 10000000) {
-			num = -(num - 10000000);
+		if (num >= SPECIAL_REG) {
+			num = -(num - SPECIAL_REG);
 		}
 		return num;
 	}
