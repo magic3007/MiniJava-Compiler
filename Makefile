@@ -69,6 +69,16 @@ testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
 	if [ $$EXIT_CODE -eq 0 ] ; \
 		then echo "Program type checked successfully" > $(OUT)/std.output; \
 		else echo "Type error" > $(OUT)/std.output; fi;
+# manually add comment 'TE' to identify the type errors that 
+# can not be recognized by standard Java compiler
+	@grep "//\s*TE" $< >/dev/null; \
+	if [ $$? -eq 0 ] ; \
+		then echo "Type error" > $(OUT)/std.output; fi;
+# manually add comment 'legal in MiniJava' to identify the type errors that 
+# are judged illegal by standard Java compiler but legal in MiniJava
+	@grep 'legal in MiniJava' $< >/dev/null; \
+	if [ $$? -eq 0 ] ; \
+		then echo "Program type checked successfully" > $(OUT)/std.output; fi;
 	@$(JAVA) -cp $(OUT) TypeCheck < $< > $(OUT)/my.output
 	@diff $(OUT)/std.output $(OUT)/my.output
 	@echo [TypeCheck] passed! $<

@@ -11,7 +11,7 @@ class Test2 extends Test{
 	Test test1;
 	int j;
 
-	j = test1.start();
+	j = test1.start(); //legal in MiniJava
 
 	return 0;
     }
