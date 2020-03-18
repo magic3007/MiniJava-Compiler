@@ -165,7 +165,6 @@ class ClassType extends Type {
 		VariableList param;
 		VariableList temp;
 
-		// TODO: check if paramNames conflit with tempNames
 
 		Method() {
 			param = new VariableList();
