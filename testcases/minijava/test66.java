@@ -23,6 +23,6 @@ class Test{
 
 	Test2 test2;
 
-	return test2;
+	return test2; // legal in MiniJava
     }
 }
