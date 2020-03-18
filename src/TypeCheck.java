@@ -115,6 +115,9 @@ class ScanClassMethods extends DepthFirstVisitor {
 		final Type type = (Type) option.value;
 		final String name = node.f1.f0.tokenImage;
 		if (selfMethod != null) {
+			if (selfMethod.param.lookupByName(name) != null) {
+				Info.panic("temporary variable name has conflict with parameter name");
+			}
 			selfMethod.temp.add(type, name);
 		} else {
 			selfClass.field.add(type, name);
