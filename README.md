@@ -12,7 +12,7 @@ That's easy! Just type these in your terminal:
 make && make build
 ```
 
-Type `make test` to run all tests.
+Type `make test [-j<# of processes>]` to run all tests.
 
 ## Overview
 
