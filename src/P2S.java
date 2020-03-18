@@ -283,8 +283,8 @@ class PigletTranslator extends GJDepthFirst<Token, PigletTranslatorAugs> {
     }
 
     /**
-     * Piglet syntax: HStoreStmt ::= "HSTORE" Exp IntegerLiteral Exp Spiglet syntax:
-     * HStoreStmt ::= "HSTORE" Temp IntegerLiteral Temp
+     * Piglet syntax: HStoreStmt ::= "HSTORE" Exp IntegerLiteral Exp
+     * Spiglet syntax: HStoreStmt ::= "HSTORE" Temp IntegerLiteral Temp
      */
     public Token visit(HStoreStmt n, PigletTranslatorAugs argus) {
         Emitter e = argus.getEmitter();
@@ -300,8 +300,8 @@ class PigletTranslator extends GJDepthFirst<Token, PigletTranslatorAugs> {
     }
 
     /**
-     * Piglet syntax: HLoadStmt ::= "HLOAD" Temp Exp IntegerLiteral Spiglet syntax:
-     * HLoadStmt ::= "HLOAD" Temp Temp IntegerLiteral
+     * Piglet syntax: HLoadStmt ::= "HLOAD" Temp Exp IntegerLiteral 
+     * Spiglet syntax: HLoadStmt ::= "HLOAD" Temp Temp IntegerLiteral
      */
     public Token visit(HLoadStmt n, PigletTranslatorAugs argus) {
         Emitter e = argus.getEmitter();
@@ -317,8 +317,8 @@ class PigletTranslator extends GJDepthFirst<Token, PigletTranslatorAugs> {
     }
 
     /**
-     * Piglet syntax: MoveStmt ::= "MOVE" Temp (piglet-)Exp Spiglet syntax: MoveStmt
-     * ::= "MOVE" Temp (spiglet-)Exp
+     * Piglet syntax: MoveStmt ::= "MOVE" Temp (piglet-)Exp 
+     * Spiglet syntax: MoveStmt ::= "MOVE" Temp (spiglet-)Exp
      */
     public Token visit(MoveStmt n, PigletTranslatorAugs argus) {
         Emitter e = argus.getEmitter();
@@ -334,8 +334,8 @@ class PigletTranslator extends GJDepthFirst<Token, PigletTranslatorAugs> {
     }
 
     /**
-     * Piglet syntax: PrintStmt ::= "PRINT" Exp Spiglet syntax: PrintStmt ::=
-     * "PRINT" SimpleExp
+     * Piglet syntax: PrintStmt ::= "PRINT" Exp 
+     * Spiglet syntax: PrintStmt ::= "PRINT" SimpleExp
      */
     public Token visit(PrintStmt n, PigletTranslatorAugs argus) {
         Emitter e = argus.getEmitter();
