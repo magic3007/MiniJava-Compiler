@@ -20,6 +20,26 @@ class Type {
 		}
 		return this.getClass().getSimpleName();
 	}
+
+	static void typeCastCheck(final Type from, final Type to) {
+		if (from instanceof PrimitiveType) {
+			if (!from.getClass().equals(to.getClass())) {
+				Info.panic("incompatible primitive type " + from + " -> " + to);
+			}
+		} else if (to instanceof PrimitiveType) {
+			Info.panic("cast ClassType to PrimitiveType " + from + " -> " + to);
+		} else {
+			ClassType a = (ClassType) from;
+			final ClassType b = (ClassType) to;
+			while (a != null) {
+				if (a.name.equals(b.name)) {
+					return;
+				}
+				a = a.superclass;
+			}
+			Info.panic("cast to derived class failed " + from + " -> " + to);
+		}
+	}
 }
 
 class PrimitiveType extends Type {
@@ -36,6 +56,7 @@ class ArrType extends PrimitiveType {
 
 class VoidType extends PrimitiveType {
 }
+
 
 class Variable {
 	Type type;
@@ -262,6 +283,15 @@ class ClassType extends Type {
 		return -1;
 	}
 
+	
+	Type typeOfMethod(String name){
+		for(Method method : dynamicMethods){
+			if (method.name.equals(name))
+				return method.returnType;
+		}
+		return null;
+	}
+
 	int sizeOfClass() {
 		return sizeOfSuperClasses + field.size();
 	}
@@ -291,6 +321,8 @@ class ClassType extends Type {
 				dynamicMethods.add(method);
 			} else {
 				// override the superclass's method
+				Type superType = typeOfMethod(method.name);
+				typeCastCheck(method.returnType, superType);
 				dynamicMethods.set(i, method);
 			}
 		}

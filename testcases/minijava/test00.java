@@ -4,15 +4,6 @@ class test107{
     }
 }
 
-class Test2 extends Test {
-
-    public boolean next() {
-
-	return true;
-    }
-
-}
-
 class Test {
 
     Test2 test2;
@@ -29,4 +20,14 @@ class Test {
 
 	return 0;
     }
+}
+
+
+class Test2 extends Test {
+
+    public boolean next() {
+
+	return true;
+    }
+
 }
