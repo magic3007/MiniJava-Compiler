@@ -48,7 +48,7 @@ run: build
 	$(JAVA) -cp $(OUT) HelloWorld
 
 clean: cleanjavacc
-	rm -rf out
+	rm -rf $(OUT) $(TEMP)
 	rm -rf syntaxtree vistor
 	rm -rf $(PARSER_DIR)
 
@@ -68,17 +68,27 @@ testtc: $(patsubst $(TEST_TC_DIR)/%.java, %.testtc, $(TEST_TC))
 testmj: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
 
-%.testtc: $(TEST_TC_DIR)/%.java
-	@$(JAVAC) -cp $(MNJ) $< 2>/dev/null -d $(OUT)/minijava; \
+OkText = "Program type checked successfully"
+ErrText = "Type error"
+
+define typecheck
+	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
+	@$(JAVAC) $<  \
+		-d $(OUT) \
+		2>/dev/null; \
 	if [ $$? -eq 0 ] ; \
-		then echo "Program type checked successfully" >$(TEMP_DIR)/std.$@.output; \
-		else  echo "Type error" > $(TEMP_DIR)/std.$@.output; fi;
+		then echo $(OkText) > $(TEMP_DIR)/std.$@.output; \
+		else  echo $(ErrText) > $(TEMP_DIR)/std.$@.output; fi;
 # manually add comment 'TE' to identify the type errors that can not be recognized by standard Java compiler
 	@grep "//\s*TE" $< >/dev/null; \
-	if [ $$? -eq 0 ] ; then echo "Type error" > $(TEMP_DIR)/std.$@.output; fi
+	if [ $$? -eq 0 ] ; then echo $(ErrText) > $(TEMP_DIR)/std.$@.output; fi
 # manually add comment 'legal in MiniJava' to identify the type errors that are judged illegal by standard Java compiler but legal in MiniJava
 	@grep 'legal in MiniJava' $< >/dev/null; \
-	if [ $$? -eq 0 ] ; then echo "Program type checked successfully" > $(TEMP_DIR)/std.$@.output; fi
+	if [ $$? -eq 0 ] ; then echo  $(OkText) > $(TEMP_DIR)/std.$@.output; fi
+endef
+
+%.testtc: $(TEST_TC_DIR)/%.java
+	@$(call typecheck)
 	@$(JAVA) -cp $(OUT) TypeCheck < $< > $(TEMP_DIR)/my.$@.output
 	@diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
 	if [ $$? -eq 0 ];  then \
@@ -87,27 +97,35 @@ testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
 		echo "[TypeCheck] failed!" $< && \
 		false; \
 	fi
-	# @rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output
-
-%.testmj: $(TEST_MJ_DIR)/%.java
-	@$(JAVA) -cp $(MNJ) $< > $(TEMP_DIR)/std.$@.output 2>/dev/null; \
-	if [ $$? -ne 0 ] ; then echo "ERROR" >> $(TEMP_DIR)/std.$@.output; fi;
-	@$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -jar $(PGI) >$(TEMP_DIR)/my.$@.output
-	@diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
-	if [ $$? -eq 0 ];  then \
-		echo "[   J2P   ] passed!" $<; \
-	else \
-		echo "[   J2P   ] failed!" $<; \
-		$(JAVA) -cp $(OUT) J2P < $< > $(TEMP_DIR)/dump.pg && \
-		false; \
-	fi
 	@rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output
 
+%.testmj: $(TEST_MJ_DIR)/%.java
+	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
+	@$(call typecheck)
+	@grep $(OkText) $(TEMP_DIR)/std.$@.output > /dev/null; \
+	if [ $$? -eq 0 ]; then \
+		$(JAVA) $< > $(TEMP_DIR)/std.$@.output 2>/dev/null; \
+		if [ $$? -ne 0 ] ; then echo "ERROR" >> $(TEMP_DIR)/std.$@.output; fi; \
+		$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -jar $(PGI) >$(TEMP_DIR)/my.$@.output; \
+		diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+		if [ $$? -eq 0 ];  then \
+			echo "[   J2P   ] passed!" $<; \
+			rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+		else \
+			echo "[   J2P   ] failed!" $<; \
+			$(JAVA) -cp $(OUT) J2P < $< > $(TEMP_DIR)/dump.$@.pg && \
+			false; \
+		fi; \
+	else \
+		echo "[   J2P   ] Type Error(Ignore)." $<; \
+	fi
+
 %.testpg: $(TEST_PGI_DIR)/%.pg
+	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
 	@$(JAVA) -cp $(OUT) P2S < $< | $(JAVA) -jar $(SPP) >$(TEMP_DIR)/my.$@.output; \
 	if [ $$? -ne 0 ]; then \
 		echo "[   P2S   ] failed!" $<; \
-		$(JAVA) -cp $(OUT) P2S < $< > $(TEMP_DIR)/dump.spg && \
+		$(JAVA) -cp $(OUT) P2S < $< > $(TEMP_DIR)/dump.$@.spg && \
 		false; \
 	fi
 	@$(JAVA) -jar $(PGI) < $< > $(TEMP_DIR)/std.$@.output
@@ -117,7 +135,7 @@ testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
 		echo "[   P2S   ] passed!" $<; \
 	else \
 		echo "[   P2S   ] failed!" $<; \
-		$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.spg && \
+		$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.$@.spg && \
 		false; \
 	fi
 	@rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output
