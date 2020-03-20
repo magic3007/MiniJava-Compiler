@@ -5,7 +5,220 @@ import java.util.*;
 
 ///// RIG
 
+class RIG {
+	static final int MAX_REG = TempReg.NUM_REG;
 
+	static class Node {
+		TempReg reg;
+		int color = -1;
+
+		Node alias; // disjoint set union 
+
+		Set<Node> repel = new HashSet<Node>();
+		int freeze;
+		boolean deleted;
+
+		boolean notFreezed() {
+			if (deleted) {
+				return false;
+			}
+			if (freeze > 0) {
+				return false;
+			}
+			return !reg.isPrealloc();
+		}
+
+		boolean isFreezed() {
+			return !notFreezed();
+		}
+
+		Node(TempReg reg) {
+			this.reg = reg;
+		}
+	}
+
+	Map<TempReg, Node> nodeMap = new HashMap<TempReg, Node>();
+
+	Deque<Node> stack = new ArrayDeque<Node>();
+
+	Node lookupNode(TempReg reg) {
+		Node node = nodeMap.get(reg);
+		if (node == null) {
+			node = new Node(reg);
+		}
+		return node;
+	}
+
+	void removeNode(Node n) {
+		if (!n.notFreezed()) {
+			Info.panic("never reach here");
+		}
+
+		for (Node neighbor : n.repel) {
+			neighbor.repel.remove(n);
+		}
+		n.deleted = true;
+		stack.push(n);
+	}
+
+	class MoveRelated {
+		Node n1, n2;
+
+		MoveRelated(Node n1, Node n2) {
+			this.n1 = n1;
+			this.n2 = n2;
+		}
+
+		void update() {
+			while (n1.alias != null) {
+				n1 = n1.alias;
+			}
+			while (n2.alias != null) {
+				n2 = n2.alias;
+			}
+		}
+	}
+
+	void removeRelated(MoveRelated m) {
+		m.update();
+		m.n2.alias = m.n1;
+		removeNode(m.n2);
+		removeNode(m.n1);
+	}
+
+	List<MoveRelated> moveRelated = new ArrayList<MoveRelated>();
+
+	void addInterference(TempReg r1, TempReg r2) {
+		Node n1 = lookupNode(r1);
+		Node n2 = lookupNode(r2);
+		n1.repel.add(n2);
+		n2.repel.add(n1);
+	}
+
+	void addMove(TempReg r1, TempReg r2) {
+		Node n1 = lookupNode(r1);
+		Node n2 = lookupNode(r2);
+		n1.freeze += 1;
+		n2.freeze += 1;
+		moveRelated.add(new MoveRelated(n1, n2));
+	}
+
+	Node findInsignificantNode() {
+		Node rv = null;
+		for (Map.Entry<TempReg, Node> entry : nodeMap.entrySet()) {
+			Node n = entry.getValue();
+			if (n.notFreezed() && n.repel.size() < MAX_REG) {
+				return n;
+			}
+		}
+		return rv;
+	}
+
+	Node findSignificantNode() {
+		Node rv = null;
+		for (Map.Entry<TempReg, Node> entry : nodeMap.entrySet()) {
+			Node n = entry.getValue();
+			if (n.notFreezed()) {
+				return n;
+			}
+		}
+		return rv;
+	}
+
+	int neighborMoveRelated(MoveRelated m) {
+		int rv = m.n1.repel.size() + m.n2.repel.size();
+		for (Node n : m.n1.repel) {
+			if (m.n2.repel.contains(n)) {
+				rv -= 1;
+			}
+		}
+		return rv;
+	}
+
+	MoveRelated findMoveRelated() {
+		for (MoveRelated m : moveRelated) {
+			if (neighborMoveRelated(m) < MAX_REG) {
+				return m;
+			}
+		}
+		return null;
+	}
+
+	boolean canColor(Node n, int c) {
+		for (Node neighbor : n.repel) {
+			if (neighbor.color == c) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	boolean color(Node n) {
+		if (n.alias != null) {
+			n.color = n.alias.color;
+			return true;
+		}
+
+		for (int i = 0; i < MAX_REG; i++) {
+			if (canColor(n, i)) {
+				n.color = i;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// return null if successfully colored the graph
+	// otherwise, return the spilled temperal variable
+	TempReg main() {
+		ListIterator<MoveRelated> iter = moveRelated.listIterator();
+		while(iter.hasNext()) {
+			MoveRelated m = iter.next();
+			if (m.n1.repel.contains(m.n2)) {
+				m.n1.freeze -= 1;
+				m.n2.freeze -= 1;
+				iter.remove();
+			}
+		}
+
+		while (true) {
+			Node n = findInsignificantNode();
+			if (n != null) {
+				removeNode(n);
+				continue;
+			}
+			MoveRelated m = findMoveRelated();
+			if (m != null) {
+				removeRelated(m);
+				continue;
+			}
+
+			if (!moveRelated.isEmpty()) {
+				m = moveRelated.get(0);
+				m.n1.freeze -= 1;
+				m.n2.freeze -= 1;
+				moveRelated.remove(0);
+				continue;
+			}
+
+			n = findSignificantNode();
+			if (n != null) {
+				removeNode(n);
+				continue;
+			}
+
+			break;
+		}
+
+		while (! stack.isEmpty()) {
+			Node n = stack.pop();
+			if (!color(n)) {
+				return n.reg;
+			}
+		}
+		return null;
+	}
+}
 
 ////////////////////////////////////////////////////////////////
 
@@ -43,6 +256,10 @@ class TempReg extends SimpleExp {
 
 	static final int SPECIAL_REG = 10000000;
 	private static int tCounter = SPECIAL_REG + NUM_REG;
+
+	boolean isPrealloc() {
+		return SPECIAL_REG <= num && num < SPECIAL_REG + NUM_REG;
+	}
 
 	static TempReg newTemp() {
 		tCounter += 1;
