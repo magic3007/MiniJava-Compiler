@@ -302,8 +302,9 @@ class ClassType extends Type {
 
 	static boolean isVariablesTypeSame(VariableList a, VariableList b) {
 		if (a. size() != b. size()) return false;
-		for(int i = 0; i < a.size(); i++)
-			if(a.get(i).name.equals(b.get(i).name)) return false;
+		for(int i = 0; i < a.size(); i++){
+			if(!a.get(i).type.toString().equals(b.get(i).type.toString())) return false;
+		}
 		return true;
 	}
 
