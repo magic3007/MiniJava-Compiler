@@ -283,11 +283,11 @@ class ClassType extends Type {
 		return -1;
 	}
 
-	
-	Type typeOfMethod(String name){
+	Method getDynamicMethodByName(String name){
 		for(Method method : dynamicMethods){
-			if (method.name.equals(name))
-				return method.returnType;
+			if(method.name.equals(name)){
+				return method;
+			}
 		}
 		return null;
 	}
@@ -300,11 +300,19 @@ class ClassType extends Type {
 		return dynamicMethods.size();
 	}
 
+	static boolean isVariablesTypeSame(VariableList a, VariableList b) {
+		if (a. size() != b. size()) return false;
+		for(int i = 0; i < a.size(); i++)
+			if(a.get(i).name.equals(b.get(i).name)) return false;
+		return true;
+	}
+
 	void analyze() {
 		// if have been analyzed
 		if (!(dynamicMethods == null)) {
 			return;
 		}
+
 
 		if (superclass != null) {
 			superclass.analyze();
@@ -320,9 +328,12 @@ class ClassType extends Type {
 			if (i < 0) {
 				dynamicMethods.add(method);
 			} else {
+				Method superMethod = getDynamicMethodByName(method.name);
+				if(isVariablesTypeSame(method.param, superMethod.param) == false) {
+					Info.panic("Overloading is not allowed in MiniJava!");
+				}
 				// override the superclass's method
-				Type superType = typeOfMethod(method.name);
-				typeCastCheck(method.returnType, superType);
+				typeCastCheck(method.returnType, superMethod.returnType);
 				dynamicMethods.set(i, method);
 			}
 		}

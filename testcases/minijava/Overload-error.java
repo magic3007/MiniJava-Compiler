@@ -1,4 +1,4 @@
-class test107{
+class testOverload{
     public static void main(String[] a){
 	System.out.println(new Test().start());
     }
