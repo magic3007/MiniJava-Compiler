@@ -307,12 +307,22 @@ class ClassType extends Type {
 		return true;
 	}
 
+	enum EnumAnalyzeState{
+		UNDO, ONGOING, DONE;
+	}
+	EnumAnalyzeState analyzeState = EnumAnalyzeState.UNDO;
+
 	void analyze() {
+		if (analyzeState.equals(EnumAnalyzeState.ONGOING)) {
+			Info.panic("Recursive Extension.");
+		}
+
 		// if have been analyzed
 		if (!(dynamicMethods == null)) {
 			return;
 		}
 
+		analyzeState = EnumAnalyzeState.ONGOING;
 
 		if (superclass != null) {
 			superclass.analyze();
@@ -337,6 +347,8 @@ class ClassType extends Type {
 				dynamicMethods.set(i, method);
 			}
 		}
+
+		analyzeState = EnumAnalyzeState.DONE;
 	}
 }
 
