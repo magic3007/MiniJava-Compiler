@@ -8,17 +8,17 @@ Implementation for the lesson Compiling Engineering (2020 Spring) in Peking Univ
 
 That's easy! Just type these in your terminal:
 
-```
+```bash
 make && make build
 ```
 
-Type `make test [-j<# of processes>]` to run all tests.
+Type `make test` to run all tests. If you want to use to multithreading acceleration for testing, feel free to type `make test -j<number of threads>`.
 
 ## Overview
 
 The works are divided into five parts, each of which is a homework of the course:
 
-1. Semantics analysis: type check a MiniJava program
+1. [Semantics analysis: type check a MiniJava program](./docs/type_check.md)
 2. IR generation (1): compile a MiniJava program to Piglet
 3. IR generation (2): compile a Piglet program to Spiglet
 4. Register allocation: compile a Spiglet program to Kanga
