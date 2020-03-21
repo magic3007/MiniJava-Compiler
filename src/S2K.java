@@ -856,6 +856,10 @@ class InstrJump extends Instruction {
 			e.emit("CJUMP", t.getName(), l);
 		}
 	}
+
+	Instruction replace(TempReg s, TempReg t) {
+		return new InstrJump(s == this.t ? t : this.t, l);
+	}
 }
 
 /* HSTORE R1 integer R2
@@ -876,6 +880,13 @@ class InstrStore extends Instruction {
 
 	void emit(Emitter e) {
 		e.emit("HSTORE", base.getName(), off, val.getName());
+	}
+
+	Instruction replace(TempReg s, TempReg t) {
+		return new InstrStore(
+			s == this.base ? t : this.base, 
+			off,
+			s == this.val ? t : this.val);
 	}
 }
 
@@ -898,6 +909,13 @@ class InstrLoad extends Instruction {
 	void emit(Emitter e) {
 		e.emit("HLOAD", reg.getName(), base.getName(), off);
 	}
+
+	Instruction replace(TempReg s, TempReg t) {
+		return new InstrLoad(
+			s == this.reg ? t : this.reg, 
+			s == this.base ? t : this.base,
+			off);
+	}
 }
 
 /* ALOAD R1 SPILLEDARG integer */
@@ -915,6 +933,12 @@ class InstrALoad extends Instruction {
 	void emit(Emitter e) {
 		e.emit("ALOAD", reg.getName(), "SPILLEDARG", Integer.toString(os));
 	}
+
+	Instruction replace(TempReg s, TempReg t) {
+		return new InstrALoad(
+			s == this.reg ? t : this.reg, 
+			os);
+	}
 }
 
 /* ASTORE SPILLEDARG integer R1 */
@@ -931,6 +955,12 @@ class InstrAStore extends Instruction {
 
 	void emit(Emitter e) {
 		e.emit("ASTORE", "SPILLEDARG", Integer.toString(os), reg.getName());
+	}
+
+	Instruction replace(TempReg s, TempReg t) {
+		return new InstrAStore(
+			os,
+			s == this.reg ? t : this.reg);
 	}
 }
 
@@ -956,6 +986,16 @@ class InstrCall extends Instruction {
 	void emit(Emitter e) {
 		e.emit("CALL", simple.getName());
 	}
+
+	Instruction replace(TempReg s, TempReg t) {
+		if (!(simple instanceof TempReg)) {
+			return new InstrCall(simple, numOfArgs);
+		}
+		TempReg r = (TempReg) simple;
+		return new InstrCall(
+			r == s ? t : r,
+			numOfArgs);
+	}
 }
 
 class InstrPrint extends Instruction {
@@ -972,6 +1012,16 @@ class InstrPrint extends Instruction {
 	void emit(Emitter e) {
 		e.emit("PRINT", simple.getName());
 	}
+
+	Instruction replace(TempReg s, TempReg t) {
+		if (!(simple instanceof TempReg)) {
+			return new InstrPrint(simple);
+		}
+		TempReg r = (TempReg) simple;
+		return new InstrPrint(
+			r == s ? t : r
+			);
+	}
 }
 
 class InstrPassArg extends Instruction {
@@ -987,6 +1037,12 @@ class InstrPassArg extends Instruction {
 
 	void emit(Emitter e) {
 		e.emit("PASSARG", Integer.toString(os), reg.getName());
+	}
+
+	Instruction replace(TempReg s, TempReg t) {
+		return new InstrPassArg(
+			os,
+			s == this.reg ? t : this.reg);
 	}
 }
 
