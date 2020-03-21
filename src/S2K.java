@@ -105,6 +105,9 @@ class RIG {
 	List<MoveRelated> moveRelated = new ArrayList<MoveRelated>();
 
 	void addInterference(TempReg r1, TempReg r2) {
+		if (r1 == r2) {
+			Info.panic("addInterference()");
+		}
 		Node n1 = lookupNode(r1);
 		Node n2 = lookupNode(r2);
 		n1.repel.add(n2);
@@ -243,6 +246,7 @@ class RIG {
 			if (!moveRelated.isEmpty()) {
 				Info.dump("unfreeze move-related nodes");
 				m = moveRelated.get(0);
+				m.update();
 				m.n1.freeze -= 1;
 				m.n2.freeze -= 1;
 				moveRelated.remove(0);
