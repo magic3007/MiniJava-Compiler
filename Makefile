@@ -9,6 +9,7 @@ JTB = deps/jtb132.jar
 JAVACC = deps/javacc-7.0.5.jar
 PGI = deps/pgi.jar
 SPP = deps/spp.jar
+KGI = deps/kgi.jar
 
 default: build
 
@@ -56,11 +57,15 @@ TEST_MJ     = $(wildcard $(TEST_MJ_DIR)/*.java)
 TEST_PGI_DIR = testcases/piglet
 TEST_PGI	 = $(wildcard $(TEST_PGI_DIR)/*.pg)
 
+TEST_SPGI_DIR = testcases/spiglet
+TEST_SPGI	 = $(wildcard $(TEST_SPGI_DIR)/*.spg)
+
 test: testmj testpg
 	@echo Congrats! You have passed all the test.
 
 testmj: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
+testkg: $(patsubst $(TEST_SPGI_DIR)/%.spg, %.testkg, $(TEST_SPGI))
 
 %.testmj: $(TEST_MJ_DIR)/%.java
 	@rm -rf $(OUT)/minijava/$*.class
@@ -103,3 +108,17 @@ testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
 		$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.spg && \
 		false; \
 	fi
+
+
+%.testkg: $(TEST_SPGI_DIR)/%.spg
+	@$(JAVA) -jar $(PGI) < $< > $(OUT)/std.output
+	@$(JAVA) -cp $(OUT) S2K < $< | $(JAVA) -jar $(KGI) > $(OUT)/my.output
+	@diff $(OUT)/std.output $(OUT)/my.output
+	@if [ $$? -eq 0 ]; then \
+		echo "[   S2K   ] passed!" $<; \
+	else \
+		echo "[   S2K   ] failed!" $<; \
+		$(JAVA) -cp $(OUT) S2K < $< > $(OUT)/dump.kg && \
+		false; \
+	fi
+
