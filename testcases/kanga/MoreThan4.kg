@@ -1,0 +1,93 @@
+MAIN [0][0][7]
+       MOVE t0 HALLOCATE 8
+       MOVE t1 HALLOCATE 4
+       MOVE t2 MT4_Change
+       HSTORE t0 4 t2
+       MOVE t2 MT4_Start
+       HSTORE t0 0 t2
+       HSTORE t1 0 t0
+       MOVE t0 t1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 0
+       MOVE t1 1
+       MOVE t3 2
+       MOVE t4 3
+       MOVE t5 4
+       MOVE t6 5
+       MOVE t7 6
+       MOVE a0 t0
+       MOVE a1 t1
+       MOVE a2 t3
+       MOVE a3 t4
+       PASSARG 1 t5
+       PASSARG 2 t6
+       PASSARG 3 t7
+       CALL t2
+       MOVE t8 v0
+       PRINT t8
+END
+MT4_Start [7][7][7]
+       ASTORE SPILLEDARG 3 s0
+       ASTORE SPILLEDARG 4 s1
+       ASTORE SPILLEDARG 5 s2
+       ASTORE SPILLEDARG 6 s3
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE s2 a2
+       MOVE s3 a3
+       PRINT s1
+       PRINT s2
+       PRINT s3
+       ALOAD v1 SPILLEDARG 0
+       PRINT v1
+       ALOAD v1 SPILLEDARG 1
+       PRINT v1
+       ALOAD v1 SPILLEDARG 2
+       PRINT v1
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 4
+       MOVE a0 t0
+       ALOAD v1 SPILLEDARG 2
+       MOVE a1 v1
+       ALOAD v0 SPILLEDARG 1
+       MOVE a2 v0
+       ALOAD v0 SPILLEDARG 0
+       MOVE a3 v0
+       PASSARG 1 s3
+       PASSARG 2 s2
+       PASSARG 3 s1
+       CALL t2
+       MOVE t1 v0
+       MOVE t0 t1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 3
+       ALOAD s1 SPILLEDARG 4
+       ALOAD s2 SPILLEDARG 5
+       ALOAD s3 SPILLEDARG 6
+END
+MT4_Change [7][7][0]
+       ASTORE SPILLEDARG 3 s0
+       ASTORE SPILLEDARG 4 s1
+       ASTORE SPILLEDARG 5 s2
+       ASTORE SPILLEDARG 6 s3
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE s2 a2
+       MOVE s3 a3
+       PRINT s1
+       PRINT s2
+       PRINT s3
+       ALOAD v1 SPILLEDARG 0
+       PRINT v1
+       ALOAD v1 SPILLEDARG 1
+       PRINT v1
+       ALOAD v1 SPILLEDARG 2
+       PRINT v1
+       MOVE t0 0
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 3
+       ALOAD s1 SPILLEDARG 4
+       ALOAD s2 SPILLEDARG 5
+       ALOAD s3 SPILLEDARG 6
+END

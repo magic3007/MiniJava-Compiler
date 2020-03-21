@@ -1,0 +1,45 @@
+MAIN [0][0][2]
+       MOVE t0 HALLOCATE 4
+       MOVE t1 HALLOCATE 4
+       MOVE t2 Fac_ComputeFac
+       HSTORE t0 0 t2
+       HSTORE t1 0 t0
+       MOVE t0 t1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 0
+       MOVE t1 10
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+       PRINT t3
+END
+Fac_ComputeFac [2][3][2]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       ASTORE SPILLEDARG 2 s2
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE t0 1
+       MOVE t1 LT s1 t0
+       CJUMP t1 L2
+       MOVE s2 1
+       JUMP L3
+L2     NOOP
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 0
+       MOVE t1 1
+       MOVE t3 MINUS s1 t1
+       MOVE a0 t0
+       MOVE a1 t3
+       CALL t2
+       MOVE t1 v0
+       MOVE t0 TIMES s1 t1
+       MOVE s2 t0
+L3     NOOP
+       MOVE v0 s2
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+       ALOAD s2 SPILLEDARG 2
+END
