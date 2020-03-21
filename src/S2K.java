@@ -455,7 +455,11 @@ class ProcBlock {
 			if (i.label != null) {
 				e.emitBuf(i.label);
 			}
-			i.emitLiveness(e);
+			if (!i.isNoop()) {
+				i.emitLiveness(e);
+			} else {
+				e.emit("NOOP");
+			}
 		}
 		e.emitClose("END");
 	}
@@ -813,6 +817,9 @@ class InstrMove extends Instruction {
 	}
 
 	boolean isNoop() {
+		if (!r.isPrealloc() && !out.contains(r)) {
+			return true;
+		}
 		return exp.TempRegOnly() != null && ((TempReg) exp.r1).alloc == r.alloc;
 	}
 
@@ -926,6 +933,13 @@ class InstrLoad extends Instruction {
 		e.emit("HLOAD", reg.getName(), base.getName(), off);
 	}
 
+	boolean isNoop() {
+		if (!reg.isPrealloc() && !out.contains(reg)) {
+			return true;
+		}
+		return false;
+	}
+
 	Instruction replace(TempReg s, TempReg t) {
 		return new InstrLoad(
 			s == this.reg ? t : this.reg, 
@@ -950,6 +964,13 @@ class InstrALoad extends Instruction {
 		e.emit("ALOAD", reg.getName(), "SPILLEDARG", Integer.toString(os));
 	}
 
+	boolean isNoop() {
+		if (!reg.isPrealloc() && !out.contains(reg)) {
+			return true;
+		}
+		return false;
+	}
+	
 	Instruction replace(TempReg s, TempReg t) {
 		return new InstrALoad(
 			s == this.reg ? t : this.reg, 
