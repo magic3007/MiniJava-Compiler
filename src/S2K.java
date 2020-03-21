@@ -582,6 +582,22 @@ class ProcBlock {
 		}
 	}
 
+	void analyzeNoop() {
+		for (Instruction i = dummyFirst.next; i != dummyLast; i = i.next) {
+			if (i.isNoop()) {
+				if (i.label == null) {
+					i.remove();
+				} else if (i.next != dummyLast && i.next.label == null) {
+					i.next.label = i.label;
+					i.remove();
+				} else if (i.next == dummyLast && i.next.label != null) {
+					// TODO: two entry points rendezvous
+					// merge them!
+				}
+			}
+		}
+	}
+
 	void analyze() {
 		stackSize = numOfParams;
 		analyzeJump();
@@ -592,6 +608,7 @@ class ProcBlock {
 			TempReg spilled = analyzeInterference();
 			if (spilled == null) {
 				rig.paintColor();
+				analyzeNoop();
 				return;
 			}
 			emit(new Emitter(Info.DEBUG == false));
@@ -705,6 +722,10 @@ class Instruction {
 		Info.panic("Not implemented");
 		return null;
 	}
+
+	boolean isNoop() {
+		return false;
+	}
 }
 
 //  the AST for kanga
@@ -771,11 +792,11 @@ class InstrMove extends Instruction {
 		}
 	}
 
+	boolean isNoop() {
+		return exp.TempRegOnly() != null && ((TempReg) exp.r1).alloc == r.alloc;
+	}
+
 	void emit(Emitter e) {
-		if (false == Info.DEBUG &&
-			(exp.TempRegOnly() != null) && (((TempReg) exp.r1).alloc == r.alloc)) {
-			return;
-		}
 		e.emit("MOVE", r.getName(), exp.toString());
 	}
 
@@ -787,6 +808,10 @@ class InstrMove extends Instruction {
 class InstrNoop extends Instruction {
 	void emit(Emitter e) {
 		e.emit("NOOP");
+	}
+
+	boolean isNoop() {
+		return true;
 	}
 }
 
@@ -1074,31 +1099,10 @@ class SpigletVisitor extends DepthFirstVisitor {
 	}
 
 	public void visit(Label n) {
+		selfProc.newInstr(new InstrNoop());
 		String name = n.f0.tokenImage;
 		selfProc.label2instr.put(name, selfProc.lastInstr());
 		selfProc.lastInstr().label = name;
-	}
-
-	// hack NodeSequence in order to visit first the instruction
-	// and then the label
-	public void visit(NodeSequence n) {
-		Enumeration<Node> e = n.elements();
-		if (!e.hasMoreElements()) {
-			Info.panic("Empty NodeSequence");
-			return;
-		}
-		Node n1 = e.nextElement();
-		if (!e.hasMoreElements()) {
-			n1.accept(this);
-			return;
-		}
-		Node n2 = e.nextElement();
-		if (e.hasMoreElements()) {
-			Info.panic("Too many nodes");
-			return;
-		}
-		n2.accept(this);
-		n1.accept(this);
 	}
 
 	public void visit(NoOpStmt n) {
