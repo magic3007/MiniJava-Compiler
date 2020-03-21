@@ -25,15 +25,14 @@ class RIG {
 			if (freeze > 0) {
 				return false;
 			}
-			return !reg.isPrealloc();
-		}
-
-		boolean isFreezed() {
-			return !notFreezed();
+			return color == -1;
 		}
 
 		Node(TempReg reg) {
 			this.reg = reg;
+			if (reg.isPrealloc()) {
+				color = reg.alloc;
+			}
 		}
 	}
 
@@ -46,11 +45,12 @@ class RIG {
 		if (node == null) {
 			node = new Node(reg);
 		}
+		nodeMap.put(reg, node);
 		return node;
 	}
 
 	void removeNode(Node n) {
-		if (!n.notFreezed()) {
+		if (n.freeze > 0) {
 			Info.panic("never reach here");
 		}
 
@@ -61,12 +61,16 @@ class RIG {
 		stack.push(n);
 	}
 
-	class MoveRelated {
+	static class MoveRelated {
 		Node n1, n2;
 
 		MoveRelated(Node n1, Node n2) {
 			this.n1 = n1;
 			this.n2 = n2;
+		}
+
+		public String toString() {
+			return n1.reg.getName() + "--" + n2.reg.getName();
 		}
 
 		void update() {
@@ -81,9 +85,21 @@ class RIG {
 
 	void removeRelated(MoveRelated m) {
 		m.update();
+		if (m.n1 == m.n2) {
+			return;
+		}
+		if (m.n2.color != -1) {
+			removeRelated(new MoveRelated(m.n2, m.n1));
+			return;
+		}
 		m.n2.alias = m.n1;
+		m.n1.freeze += m.n2.freeze - 2;
+		m.n2.freeze = 0;
 		removeNode(m.n2);
-		removeNode(m.n1);
+		for (Node neigh : m.n2.repel) {
+			neigh.repel.add(m.n1);
+			m.n1.repel.add(neigh);
+		}
 	}
 
 	List<MoveRelated> moveRelated = new ArrayList<MoveRelated>();
@@ -184,16 +200,20 @@ class RIG {
 		while (true) {
 			Node n = findInsignificantNode();
 			if (n != null) {
+				Info.dump("remove insignificant node");
 				removeNode(n);
 				continue;
 			}
 			MoveRelated m = findMoveRelated();
 			if (m != null) {
+				Info.dump("coalesce move-related nodes " + m);
 				removeRelated(m);
+				moveRelated.remove(m);
 				continue;
 			}
 
 			if (!moveRelated.isEmpty()) {
+				Info.dump("unfreeze move-related nodes");
 				m = moveRelated.get(0);
 				m.n1.freeze -= 1;
 				m.n2.freeze -= 1;
@@ -203,18 +223,21 @@ class RIG {
 
 			n = findSignificantNode();
 			if (n != null) {
+				Info.dump("remove significant node");
 				removeNode(n);
 				continue;
 			}
 
 			break;
 		}
+		Info.dump("retrace stack");
 
 		while (! stack.isEmpty()) {
 			Node n = stack.pop();
 			if (!color(n)) {
 				return n.reg;
 			}
+			n.reg.alloc = n.color;
 		}
 		return null;
 	}
@@ -242,15 +265,15 @@ class SimpleStringExp extends SimpleExp {
 class TempReg extends SimpleExp {
 	static final int CALLEE_SAVED_REG = 8;
 	static final int NUM_REG = 
-		CALLEE_SAVED_REG 
-		+ 10 /* t0 - t9 */
+		+ 8 /* s0 - s7 */
 		+ 4 /* a0 - a3 */
-		+ 2 /* v0 - v1 */;
+		+ 2 /* v0 - v1 */
+		+ 10 /* t0 - t9 */;
 	static final String[] REG_NAME = {
 		"s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
-		"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9",
 		"a0", "a1", "a2", "a3",
-		"v0", "v1"
+		"v0", "v1",
+		"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9"
 	};
 	int alloc = -1;
 
@@ -292,6 +315,10 @@ class TempReg extends SimpleExp {
 
 	static TempReg newT(int num) {
 		return init(num);
+	}
+
+	static TempReg getSpecial(int num) {
+		return newT(REG_NAME[num]);
 	}
 
 	static TempReg newT(String name) {
@@ -401,9 +428,68 @@ class ProcBlock {
 		}
 	}
 
+	RIG rig;
+
+	void analyzeInterference() {
+		rig = new RIG();
+		for (Instruction i = dummyFirst.next; i != dummyLast; i = i.next) {
+			for (TempReg x : i.in) {
+				for (TempReg y : i.in) {
+					if (x != y) {
+						rig.addInterference(x, y);
+					}
+				}
+			}
+			for (TempReg x : i.out) {
+				for (TempReg y : i.out) {
+					if (x != y) {
+						rig.addInterference(x, y);
+					}
+				}
+			}
+		}
+
+		for (Instruction i = dummyFirst.next; i != dummyLast; i = i.next) {
+			if (i instanceof InstrMove) {
+				InstrMove i2 = (InstrMove) i;
+				TempReg t = i2.r;
+				TempReg s = i2.exp.TempRegOnly();
+				if (s != null) {
+					rig.addMove(t, s);
+				}
+			}
+		}
+
+		TempReg t = rig.main();
+		System.out.println(t);
+	}
+
+	Instruction newMove(TempReg t, TempReg s) {
+		return new InstrMove(t, new KangaExp(s));
+	}
+
+	void analyzeCalleeSavedRegisters() {
+		for (int i = 0; i < TempReg.CALLEE_SAVED_REG; i++) {
+			TempReg r = TempReg.getSpecial(i);
+			TempReg t = TempReg.newTemp();
+			Instruction instr;
+			instr = newMove(t, r);
+			instr.insertAfter(dummyFirst);
+			instr = newMove(r, t);
+			if ((dummyLast.prev instanceof InstrMove) && 
+				((InstrMove) dummyLast.prev).r == TempReg.newT("v0")) {
+				instr.insertBefore(dummyLast.prev);
+			} else {
+				instr.insertBefore(dummyLast);
+			}
+		}
+	}
+
 	void analyze() {
 		analyzeJump();
+		analyzeCalleeSavedRegisters();
 		analyzeLiveness();
+		analyzeInterference();
 	}
 }
 
@@ -513,6 +599,16 @@ class KangaExp {
 	// HAllocate: a
 	SimpleExp r1, r2;
 	String operator;
+
+	TempReg TempRegOnly() {
+		if (operator != null) {
+			return null;
+		}
+		if (!(r1 instanceof TempReg)) {
+			return null;
+		}
+		return (TempReg) r1;
+	}
 
 	KangaExp(SimpleExp simple) {
 		this.r1 = simple;
