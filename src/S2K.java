@@ -203,6 +203,15 @@ class RIG {
 		return false;
 	}
 
+	void paintColor() {
+		for (Map.Entry<TempReg, Node> entry : nodeMap.entrySet()) {
+			Node n = entry.getValue();
+			if (!n.reg.isPrealloc()) {
+				n.reg.alloc = n.color;
+			}
+		}
+	}
+
 	// return null if successfully colored the graph
 	// otherwise, return the spilled temperal variable
 	TempReg main() {
@@ -256,7 +265,7 @@ class RIG {
 			if (!color(n)) {
 				return n.reg;
 			}
-			n.reg.alloc = n.color;
+			// n.reg.alloc = n.color;
 		}
 		return null;
 	}
@@ -438,6 +447,10 @@ class ProcBlock {
 	}
 
 	void analyzeLiveness() {
+		for (Instruction i = dummyFirst.next; i != dummyLast; i = i.next) {
+			i.in.clear();
+			i.out.clear();
+		}
 		boolean updated = true;
 		while (updated) {
 			updated = false;
@@ -447,9 +460,52 @@ class ProcBlock {
 		}
 	}
 
+	/*
+		x = y + z;
+	=>  t1 = y + z;
+	    ASTORE t1
+	*/
+	/*
+		x = x + z;
+	=>  t1 = ALOAD 
+	    t1 = t1 + z;
+	    ASTORE t1
+	*/
+	/*
+		y = x;
+	=>  t1 = ALOAD
+		y = t1
+	*/
+	
+	void spillRegister(TempReg spilled) {
+		if (spilled.isPrealloc()) {
+			Info.panic("pre-allocated register can not be spilled");
+		}
+		int os = stackSize;
+		stackSize += 1;
+		for (Instruction i = dummyFirst.next; i != dummyLast; i = i.next) {
+			if (i.use.contains(spilled) || i.def.contains(spilled)) {
+				TempReg t1 = TempReg.newTemp();
+				Instruction j = i.replace(spilled, t1);
+				j.insertBefore(i);
+
+				if (i.use.contains(spilled)) {
+					(new InstrALoad(t1, os)).insertBefore(j);
+				}
+				if (i.def.contains(spilled)) {
+					(new InstrAStore(os, t1)).insertAfter(j);
+				}
+
+				i.remove();
+			}
+		}
+	}
+
 	RIG rig;
 
-	void analyzeInterference() {
+	// return null on success
+	// else return hint for the spilled register
+	TempReg analyzeInterference() {
 		rig = new RIG();
 		for (Instruction i = dummyFirst.next; i != dummyLast; i = i.next) {
 			for (TempReg x : i.in) {
@@ -488,7 +544,21 @@ class ProcBlock {
 			}
 		}
 
+		// caller-saved registers
+		for (Instruction i = dummyFirst.next; i != dummyLast; i = i.next) {
+			if (i instanceof InstrCall) {
+				for (TempReg r : i.in) {
+					if (i.out.contains(r) && !i.def.contains(r)) {
+						for (int j = TempReg.CALLEE_SAVED_REG; j < TempReg.NUM_REG; j++) {
+							rig.addInterference(r, TempReg.getSpecial(j));
+						}
+					}
+				}
+			}
+		}
+
 		TempReg t = rig.main();
+		return t;
 	}
 
 	Instruction newMove(TempReg t, TempReg s) {
@@ -513,10 +583,22 @@ class ProcBlock {
 	}
 
 	void analyze() {
+		stackSize = numOfParams;
 		analyzeJump();
 		analyzeCalleeSavedRegisters();
-		analyzeLiveness();
-		analyzeInterference();
+		for (int t = 0; t < 2; t++) {
+		// while (true) {
+			analyzeLiveness();
+			TempReg spilled = analyzeInterference();
+			if (spilled == null) {
+				rig.paintColor();
+				return;
+			}
+			emit(new Emitter(Info.DEBUG == false));
+			Info.dump("spilled: "  + spilled.getName());
+			spillRegister(spilled);
+		}
+		Info.panic("timeout");
 	}
 }
 
@@ -618,6 +700,11 @@ class Instruction {
 	void emit(Emitter e) {
 		Info.panic("Not implemented");
 	}
+
+	Instruction replace(TempReg s, TempReg t) {
+		Info.panic("Not implemented");
+		return null;
+	}
 }
 
 //  the AST for kanga
@@ -661,6 +748,10 @@ class KangaExp {
 		}
 		return operator + " " + r1.getName() + " " + r2.getName();
 	}
+
+	KangaExp replace(TempReg s, TempReg t) {
+		return new KangaExp(r1 == s ? t : r1, operator, r2 == s ? t : r2);
+	}
 }
 
 class InstrMove extends Instruction {
@@ -686,6 +777,10 @@ class InstrMove extends Instruction {
 			return;
 		}
 		e.emit("MOVE", r.getName(), exp.toString());
+	}
+
+	Instruction replace(TempReg s, TempReg t) {
+		return new InstrMove(s == r ? t : r, exp.replace(s, t));
 	}
 }
 
@@ -784,6 +879,8 @@ class InstrALoad extends Instruction {
 	InstrALoad(TempReg reg, int os) {
 		this.reg = reg;
 		this.os = os;
+
+		def.add(reg);
 	}
 
 	void emit(Emitter e) {
@@ -799,6 +896,8 @@ class InstrAStore extends Instruction {
 	InstrAStore(int os, TempReg reg) {
 		this.os = os;
 		this.reg = reg;
+
+		use.add(reg);
 	}
 
 	void emit(Emitter e) {
