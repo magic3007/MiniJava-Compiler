@@ -141,6 +141,8 @@ class RIG {
 		return rv;
 	}
 
+	// Briggs: Nodes a and b can be coalesced if the resulting node ab 
+	// will have fewer than K neighbors of significant degree
 	int neighborMoveRelated(MoveRelated m) {
 		int rv = m.n1.repel.size() + m.n2.repel.size();
 		for (Node n : m.n1.repel) {
@@ -151,9 +153,26 @@ class RIG {
 		return rv;
 	}
 
+	// George: Nodes a and b can be coalesced if, for every neighbor t of 
+	// a, either t already interferes with b or t is of insignificant degree. 
+	boolean moveGeorge(Node a, Node b) {
+		for (Node t : a.repel) {
+			if (! ( b.repel.contains(t) || t.repel.size() < MAX_REG  )) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	MoveRelated findMoveRelated() {
 		for (MoveRelated m : moveRelated) {
 			if (neighborMoveRelated(m) < MAX_REG) {
+				return m;
+			}
+		}
+
+		for (MoveRelated m : moveRelated) {
+			if (moveGeorge(m.n1, m.n2)) {
 				return m;
 			}
 		}
@@ -460,8 +479,16 @@ class ProcBlock {
 			}
 		}
 
+		// pre-allocated registers
+		for (int i = 0; i < TempReg.NUM_REG; i++) {
+			for (int j = i + 1; j < TempReg.NUM_REG; j++) {
+				TempReg ri = TempReg.getSpecial(i);
+				TempReg rj = TempReg.getSpecial(j);
+				rig.addInterference(ri, rj);
+			}
+		}
+
 		TempReg t = rig.main();
-		System.out.println(t);
 	}
 
 	Instruction newMove(TempReg t, TempReg s) {
@@ -571,6 +598,11 @@ class Instruction {
 	}
 
 	void emitLiveness(Emitter e) {
+		if (Info.DEBUG == false) {
+			emit(e);
+			return;
+		}
+
 		e.emitBuf("//in:");
 		for (TempReg r : in) {
 			e.emitBuf(Integer.toString(r.getNum()));
@@ -649,6 +681,10 @@ class InstrMove extends Instruction {
 	}
 
 	void emit(Emitter e) {
+		if (false == Info.DEBUG &&
+			(exp.TempRegOnly() != null) && (((TempReg) exp.r1).alloc == r.alloc)) {
+			return;
+		}
 		e.emit("MOVE", r.getName(), exp.toString());
 	}
 }
@@ -676,6 +712,9 @@ class InstrJump extends Instruction {
 	InstrJump(TempReg t, String l) {
 		this.t = t;
 		this.l = l;
+		if (t != null) {
+			use.add(t);
+		}
 	}
 
 	void analyzeJump(Map<String, Instruction> label2instr) {
@@ -769,14 +808,20 @@ class InstrAStore extends Instruction {
 
 class InstrCall extends Instruction {
 	SimpleExp simple;
+	int numOfArgs;
 
-	InstrCall(SimpleExp simple) {
+	InstrCall(SimpleExp simple, int numOfArgs) {
 		this.simple = simple;
+		this.numOfArgs = numOfArgs;
 		
 		if (simple instanceof TempReg) {
 			use.add((TempReg) simple);
 		}
 
+		for (int i = 0; i < Math.min(4, numOfArgs); i++) {
+			TempReg r = TempReg.newT("a" + i);
+			use.add(r);
+		}
 		def.add(TempReg.newT("v0"));
 	}
 
@@ -790,10 +835,14 @@ class InstrPrint extends Instruction {
 
 	InstrPrint(SimpleExp simple) {
 		this.simple = simple;
+
+		if (simple instanceof TempReg) {
+			use.add((TempReg) simple);
+		}
 	}
 
 	void emit(Emitter e) {
-		e.emit("PRINT", simple.toString());
+		e.emit("PRINT", simple.getName());
 	}
 }
 
@@ -884,7 +933,7 @@ class GetExpVisitor extends GJNoArguDepthFirst<KangaExp> {
 	public KangaExp visit(Call n) {
 		SimpleExp o1 = n.f1.accept(new GetSimpleVisitor());
 		n.f3.accept(this);
-		selfProc.newInstr(new InstrCall(o1));
+		selfProc.newInstr(new InstrCall(o1, i));
 		return new KangaExp(TempReg.newT("v0"));
 	}
 }
@@ -992,65 +1041,18 @@ class SpigletVisitor extends DepthFirstVisitor {
 		selfProc.newInstr(new InstrMove(r1, e));
 	}
 
-   /**
-    * f0 -> "PRINT"
-    * f1 -> SimpleExp()
-    */
-   public void visit(PrintStmt n) {
-      n.f0.accept(this);
-      n.f1.accept(this);
-   }
+	public void visit(PrintStmt n) {
+		SimpleExp exp = n.f1.accept(new GetSimpleVisitor());
+		selfProc.newInstr(new InstrPrint(exp));
+	}
 
-   /**
-    * f0 -> "BEGIN"
-    * f1 -> StmtList()
-    * f2 -> "RETURN"
-    * f3 -> SimpleExp()
-    * f4 -> "END"
-    */
+	// the return value of the statement
 	public void visit(StmtExp n) {
 		n.f1.accept(this);
 		SimpleExp ret = n.f3.accept(new GetSimpleVisitor());
 		KangaExp e = new KangaExp(ret);
 		selfProc.newInstr(new InstrMove(TempReg.newT("v0"), e));
 	}
-
-   /**
-    * f0 -> "CALL"
-    * f1 -> SimpleExp()
-    * f2 -> "("
-    * f3 -> ( Temp() )*
-    * f4 -> ")"
-    */
-   public void visit(Call n) {
-      n.f0.accept(this);
-      n.f1.accept(this);
-      n.f2.accept(this);
-      n.f3.accept(this);
-      n.f4.accept(this);
-   }
-
-   /**
-    * f0 -> "HALLOCATE"
-    * f1 -> SimpleExp()
-    */
-   public void visit(HAllocate n) {
-      n.f0.accept(this);
-      n.f1.accept(this);
-   }
-
-   /**
-    * f0 -> Operator()
-    * f1 -> Temp()
-    * f2 -> SimpleExp()
-    */
-   public void visit(BinOp n) {
-      n.f0.accept(this);
-      n.f1.accept(this);
-      n.f2.accept(this);
-   }
-
-
 }
 
 public class S2K {
