@@ -1,0 +1,701 @@
+MAIN [0][0][2]
+       MOVE t0 HALLOCATE 16
+       MOVE t1 HALLOCATE 12
+       MOVE t2 QS_Init
+       HSTORE t0 12 t2
+       MOVE t2 QS_Print
+       HSTORE t0 8 t2
+       MOVE t2 QS_Sort
+       HSTORE t0 4 t2
+       MOVE t2 QS_Start
+       HSTORE t0 0 t2
+       MOVE t2 4
+L0     NOOP
+       MOVE t3 12
+       MOVE t4 LT t2 t3
+       CJUMP t4 L1
+       MOVE t3 PLUS t1 t2
+       MOVE t4 0
+       HSTORE t3 0 t4
+       MOVE t2 PLUS t2 4
+       JUMP L0
+L1     NOOP
+       HSTORE t1 0 t0
+       MOVE t0 t1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 0
+       MOVE t1 10
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+       PRINT t3
+END
+QS_Start [2][2][3]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 12
+       MOVE a0 t0
+       MOVE a1 s1
+       CALL t2
+       MOVE t1 v0
+       MOVE t2 t1
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 8
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE t2 t1
+       MOVE t0 9999
+       PRINT t0
+       HLOAD t0 s0 8
+       MOVE t1 1
+       MOVE t2 MINUS t0 t1
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t3 t1 4
+       MOVE t1 0
+       MOVE a0 t0
+       MOVE a1 t1
+       MOVE a2 t2
+       CALL t3
+       MOVE t4 v0
+       MOVE t2 t4
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 8
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE t2 t1
+       MOVE t0 0
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+END
+QS_Sort [3][5][3]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       ASTORE SPILLEDARG 2 s2
+       ASTORE SPILLEDARG 3 s3
+       ASTORE SPILLEDARG 4 s4
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE s2 a2
+       MOVE t0 0
+       MOVE t1 LT s1 s2
+       CJUMP t1 L2
+       HLOAD t1 s0 4
+       MOVE t2 TIMES s2 4
+       HLOAD t1 s0 4
+       HLOAD t3 t1 0
+       MOVE t4 1
+       MOVE t5 LT t2 t3
+       MOVE t3 MINUS t4 t5
+       CJUMP t3 L4
+       ERROR
+L4     NOOP
+       MOVE t3 4
+       MOVE t4 t3
+       MOVE t3 PLUS t2 t4
+       MOVE t2 t3
+       MOVE t3 PLUS t1 t2
+       HLOAD t1 t3 0
+       MOVE t2 t1
+       MOVE s3 MINUS s1 1
+       MOVE t1 s2
+       MOVE t3 1
+L5     NOOP
+       CJUMP t3 L6
+       MOVE t4 1
+L7     NOOP
+       CJUMP t4 L8
+       MOVE s3 PLUS s3 1
+       HLOAD t5 s0 4
+       MOVE t6 TIMES s3 4
+       HLOAD t5 s0 4
+       HLOAD t7 t5 0
+       MOVE t8 1
+       MOVE t9 LT t6 t7
+       MOVE t7 MINUS t8 t9
+       CJUMP t7 L9
+       ERROR
+L9     NOOP
+       MOVE t7 4
+       MOVE t8 t7
+       MOVE t7 PLUS t6 t8
+       MOVE t6 t7
+       MOVE t7 PLUS t5 t6
+       HLOAD t5 t7 0
+       MOVE t6 t5
+       MOVE t5 1
+       MOVE t7 LT t6 t2
+       MOVE t8 MINUS t5 t7
+       CJUMP t8 L10
+       MOVE t4 0
+       JUMP L11
+L10    NOOP
+       MOVE t4 1
+L11    NOOP
+       JUMP L7
+L8     NOOP
+       MOVE t4 1
+L12    NOOP
+       CJUMP t4 L13
+       MOVE t1 MINUS t1 1
+       HLOAD t5 s0 4
+       MOVE t7 TIMES t1 4
+       HLOAD t5 s0 4
+       HLOAD t8 t5 0
+       MOVE t9 1
+       MOVE s4 LT t7 t8
+       MOVE t8 MINUS t9 s4
+       CJUMP t8 L14
+       ERROR
+L14    NOOP
+       MOVE t8 4
+       MOVE t9 t8
+       MOVE t8 PLUS t7 t9
+       MOVE t7 t8
+       MOVE t8 PLUS t5 t7
+       HLOAD t5 t8 0
+       MOVE t6 t5
+       MOVE t5 1
+       MOVE t7 LT t2 t6
+       MOVE t6 MINUS t5 t7
+       CJUMP t6 L15
+       MOVE t4 0
+       JUMP L16
+L15    NOOP
+       MOVE t4 1
+L16    NOOP
+       JUMP L12
+L13    NOOP
+       HLOAD t4 s0 4
+       MOVE t5 TIMES s3 4
+       HLOAD t4 s0 4
+       HLOAD t6 t4 0
+       MOVE t7 1
+       MOVE t8 LT t5 t6
+       MOVE t6 MINUS t7 t8
+       CJUMP t6 L17
+       ERROR
+L17    NOOP
+       MOVE t6 4
+       MOVE t7 t6
+       MOVE t6 PLUS t5 t7
+       MOVE t5 t6
+       MOVE t6 PLUS t4 t5
+       HLOAD t4 t6 0
+       MOVE t0 t4
+       MOVE t4 1
+       MOVE t5 TIMES t4 4
+       MOVE t4 PLUS s0 t5
+       HLOAD t6 t4 0
+       MOVE t4 TIMES s3 4
+       MOVE t7 1
+       MOVE t5 TIMES t7 4
+       MOVE t7 PLUS s0 t5
+       HLOAD t6 t7 0
+       HLOAD t5 t6 0
+       MOVE t7 1
+       MOVE t8 LT t4 t5
+       MOVE t5 MINUS t7 t8
+       CJUMP t5 L18
+       ERROR
+L18    NOOP
+       MOVE t5 4
+       MOVE t7 t5
+       MOVE t5 PLUS t4 t7
+       MOVE t4 t5
+       MOVE t5 PLUS t6 t4
+       HLOAD t4 s0 4
+       MOVE t6 TIMES t1 4
+       HLOAD t4 s0 4
+       HLOAD t7 t4 0
+       MOVE t8 1
+       MOVE t9 LT t6 t7
+       MOVE t7 MINUS t8 t9
+       CJUMP t7 L19
+       ERROR
+L19    NOOP
+       MOVE t7 4
+       MOVE t8 t7
+       MOVE t7 PLUS t6 t8
+       MOVE t6 t7
+       MOVE t7 PLUS t4 t6
+       HLOAD t4 t7 0
+       HSTORE t5 0 t4
+       MOVE t4 1
+       MOVE t5 TIMES t4 4
+       MOVE t4 PLUS s0 t5
+       HLOAD t6 t4 0
+       MOVE t4 TIMES t1 4
+       MOVE t7 1
+       MOVE t5 TIMES t7 4
+       MOVE t7 PLUS s0 t5
+       HLOAD t6 t7 0
+       HLOAD t5 t6 0
+       MOVE t7 1
+       MOVE t8 LT t4 t5
+       MOVE t5 MINUS t7 t8
+       CJUMP t5 L20
+       ERROR
+L20    NOOP
+       MOVE t5 4
+       MOVE t7 t5
+       MOVE t5 PLUS t4 t7
+       MOVE t4 t5
+       MOVE t5 PLUS t6 t4
+       HSTORE t5 0 t0
+       MOVE t4 1
+       MOVE t5 PLUS s3 t4
+       MOVE t4 LT t1 t5
+       CJUMP t4 L21
+       MOVE t3 0
+       JUMP L22
+L21    NOOP
+       MOVE t3 1
+L22    NOOP
+       JUMP L5
+L6     NOOP
+       MOVE t2 1
+       MOVE t3 TIMES t2 4
+       MOVE t2 PLUS s0 t3
+       HLOAD t4 t2 0
+       MOVE t2 TIMES t1 4
+       MOVE t1 1
+       MOVE t3 TIMES t1 4
+       MOVE t1 PLUS s0 t3
+       HLOAD t4 t1 0
+       HLOAD t1 t4 0
+       MOVE t3 1
+       MOVE t5 LT t2 t1
+       MOVE t1 MINUS t3 t5
+       CJUMP t1 L23
+       ERROR
+L23    NOOP
+       MOVE t1 4
+       MOVE t3 t1
+       MOVE t1 PLUS t2 t3
+       MOVE t2 t1
+       MOVE t1 PLUS t4 t2
+       HLOAD t2 s0 4
+       MOVE t3 TIMES s3 4
+       HLOAD t2 s0 4
+       HLOAD t4 t2 0
+       MOVE t5 1
+       MOVE t6 LT t3 t4
+       MOVE t4 MINUS t5 t6
+       CJUMP t4 L24
+       ERROR
+L24    NOOP
+       MOVE t4 4
+       MOVE t5 t4
+       MOVE t4 PLUS t3 t5
+       MOVE t3 t4
+       MOVE t4 PLUS t2 t3
+       HLOAD t2 t4 0
+       HSTORE t1 0 t2
+       MOVE t1 1
+       MOVE t2 TIMES t1 4
+       MOVE t1 PLUS s0 t2
+       HLOAD t3 t1 0
+       MOVE t1 TIMES s3 4
+       MOVE t4 1
+       MOVE t2 TIMES t4 4
+       MOVE t4 PLUS s0 t2
+       HLOAD t3 t4 0
+       HLOAD t2 t3 0
+       MOVE t4 1
+       MOVE t5 LT t1 t2
+       MOVE t2 MINUS t4 t5
+       CJUMP t2 L25
+       ERROR
+L25    NOOP
+       MOVE t2 4
+       MOVE t4 t2
+       MOVE t2 PLUS t1 t4
+       MOVE t1 t2
+       MOVE t2 PLUS t3 t1
+       HLOAD t1 s0 4
+       MOVE t3 TIMES s2 4
+       HLOAD t1 s0 4
+       HLOAD t4 t1 0
+       MOVE t5 1
+       MOVE t6 LT t3 t4
+       MOVE t4 MINUS t5 t6
+       CJUMP t4 L26
+       ERROR
+L26    NOOP
+       MOVE t4 4
+       MOVE t5 t4
+       MOVE t4 PLUS t3 t5
+       MOVE t3 t4
+       MOVE t4 PLUS t1 t3
+       HLOAD t1 t4 0
+       HSTORE t2 0 t1
+       MOVE t1 1
+       MOVE t2 TIMES t1 4
+       MOVE t1 PLUS s0 t2
+       HLOAD t3 t1 0
+       MOVE t1 TIMES s2 4
+       MOVE t4 1
+       MOVE t2 TIMES t4 4
+       MOVE t4 PLUS s0 t2
+       HLOAD t3 t4 0
+       HLOAD t2 t3 0
+       MOVE t4 1
+       MOVE t5 LT t1 t2
+       MOVE t2 MINUS t4 t5
+       CJUMP t2 L27
+       ERROR
+L27    NOOP
+       MOVE t2 4
+       MOVE t4 t2
+       MOVE t2 PLUS t1 t4
+       MOVE t1 t2
+       MOVE t2 PLUS t3 t1
+       HSTORE t2 0 t0
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 4
+       MOVE t1 1
+       MOVE t3 MINUS s3 t1
+       MOVE a0 t0
+       MOVE a1 s1
+       MOVE a2 t3
+       CALL t2
+       MOVE t1 v0
+              MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 4
+       MOVE t1 1
+       MOVE t3 PLUS s3 t1
+       MOVE a0 t0
+       MOVE a1 t3
+       MOVE a2 s2
+       CALL t2
+       MOVE t1 v0
+              JUMP L3
+L2     NOOP
+       L3     NOOP
+       MOVE t0 0
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+       ALOAD s2 SPILLEDARG 2
+       ALOAD s3 SPILLEDARG 3
+       ALOAD s4 SPILLEDARG 4
+END
+QS_Print [1][1][0]
+       ASTORE SPILLEDARG 0 s0
+       MOVE s0 a0
+       MOVE t0 0
+L28    NOOP
+       HLOAD t1 s0 8
+       MOVE t2 LT t0 t1
+       CJUMP t2 L29
+       HLOAD t1 s0 4
+       MOVE t2 TIMES t0 4
+       HLOAD t1 s0 4
+       HLOAD t3 t1 0
+       MOVE t4 1
+       MOVE t5 LT t2 t3
+       MOVE t3 MINUS t4 t5
+       CJUMP t3 L30
+       ERROR
+L30    NOOP
+       MOVE t3 4
+       MOVE t4 t3
+       MOVE t3 PLUS t2 t4
+       MOVE t2 t3
+       MOVE t3 PLUS t1 t2
+       HLOAD t1 t3 0
+       PRINT t1
+       MOVE t0 PLUS t0 1
+       JUMP L28
+L29    NOOP
+       MOVE t0 0
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+END
+QS_Init [2][2][0]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       MOVE s0 a0
+       MOVE s1 a1
+       HSTORE s0 8 s1
+       MOVE t0 PLUS s1 1
+       MOVE t1 4
+       MOVE t2 TIMES t0 t1
+       MOVE t0 HALLOCATE t2
+       MOVE t1 4
+L31    NOOP
+       MOVE t2 1
+       MOVE t3 PLUS s1 t2
+       MOVE t2 4
+       MOVE t4 t2
+       MOVE t2 TIMES t3 t4
+       MOVE t3 LT t1 t2
+       CJUMP t3 L32
+       MOVE t2 PLUS t0 t1
+       MOVE t3 0
+       HSTORE t2 0 t3
+       MOVE t1 PLUS t1 4
+       JUMP L31
+L32    NOOP
+       MOVE t1 4
+       MOVE t2 TIMES s1 t1
+       HSTORE t0 0 t2
+       HSTORE s0 4 t0
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       MOVE t0 0
+       MOVE t3 TIMES t0 4
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       HLOAD t0 t2 0
+       MOVE t1 1
+       MOVE t4 LT t3 t0
+       MOVE t0 MINUS t1 t4
+       CJUMP t0 L33
+       ERROR
+L33    NOOP
+       MOVE t0 4
+       MOVE t1 t0
+       MOVE t0 PLUS t3 t1
+       MOVE t1 t0
+       MOVE t0 PLUS t2 t1
+       MOVE t1 20
+       HSTORE t0 0 t1
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       MOVE t0 1
+       MOVE t3 TIMES t0 4
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       HLOAD t0 t2 0
+       MOVE t1 1
+       MOVE t4 LT t3 t0
+       MOVE t0 MINUS t1 t4
+       CJUMP t0 L34
+       ERROR
+L34    NOOP
+       MOVE t0 4
+       MOVE t1 t0
+       MOVE t0 PLUS t3 t1
+       MOVE t1 t0
+       MOVE t0 PLUS t2 t1
+       MOVE t1 7
+       HSTORE t0 0 t1
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       MOVE t0 2
+       MOVE t3 TIMES t0 4
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       HLOAD t0 t2 0
+       MOVE t1 1
+       MOVE t4 LT t3 t0
+       MOVE t0 MINUS t1 t4
+       CJUMP t0 L35
+       ERROR
+L35    NOOP
+       MOVE t0 4
+       MOVE t1 t0
+       MOVE t0 PLUS t3 t1
+       MOVE t1 t0
+       MOVE t0 PLUS t2 t1
+       MOVE t1 12
+       HSTORE t0 0 t1
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       MOVE t0 3
+       MOVE t3 TIMES t0 4
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       HLOAD t0 t2 0
+       MOVE t1 1
+       MOVE t4 LT t3 t0
+       MOVE t0 MINUS t1 t4
+       CJUMP t0 L36
+       ERROR
+L36    NOOP
+       MOVE t0 4
+       MOVE t1 t0
+       MOVE t0 PLUS t3 t1
+       MOVE t1 t0
+       MOVE t0 PLUS t2 t1
+       MOVE t1 18
+       HSTORE t0 0 t1
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       MOVE t0 4
+       MOVE t3 TIMES t0 4
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       HLOAD t0 t2 0
+       MOVE t1 1
+       MOVE t4 LT t3 t0
+       MOVE t0 MINUS t1 t4
+       CJUMP t0 L37
+       ERROR
+L37    NOOP
+       MOVE t0 4
+       MOVE t1 t0
+       MOVE t0 PLUS t3 t1
+       MOVE t1 t0
+       MOVE t0 PLUS t2 t1
+       MOVE t1 2
+       HSTORE t0 0 t1
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       MOVE t0 5
+       MOVE t3 TIMES t0 4
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       HLOAD t0 t2 0
+       MOVE t1 1
+       MOVE t4 LT t3 t0
+       MOVE t0 MINUS t1 t4
+       CJUMP t0 L38
+       ERROR
+L38    NOOP
+       MOVE t0 4
+       MOVE t1 t0
+       MOVE t0 PLUS t3 t1
+       MOVE t1 t0
+       MOVE t0 PLUS t2 t1
+       MOVE t1 11
+       HSTORE t0 0 t1
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       MOVE t0 6
+       MOVE t3 TIMES t0 4
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       HLOAD t0 t2 0
+       MOVE t1 1
+       MOVE t4 LT t3 t0
+       MOVE t0 MINUS t1 t4
+       CJUMP t0 L39
+       ERROR
+L39    NOOP
+       MOVE t0 4
+       MOVE t1 t0
+       MOVE t0 PLUS t3 t1
+       MOVE t1 t0
+       MOVE t0 PLUS t2 t1
+       MOVE t1 6
+       HSTORE t0 0 t1
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       MOVE t0 7
+       MOVE t3 TIMES t0 4
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       HLOAD t0 t2 0
+       MOVE t1 1
+       MOVE t4 LT t3 t0
+       MOVE t0 MINUS t1 t4
+       CJUMP t0 L40
+       ERROR
+L40    NOOP
+       MOVE t0 4
+       MOVE t1 t0
+       MOVE t0 PLUS t3 t1
+       MOVE t1 t0
+       MOVE t0 PLUS t2 t1
+       MOVE t1 9
+       HSTORE t0 0 t1
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       MOVE t0 8
+       MOVE t3 TIMES t0 4
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       HLOAD t0 t2 0
+       MOVE t1 1
+       MOVE t4 LT t3 t0
+       MOVE t0 MINUS t1 t4
+       CJUMP t0 L41
+       ERROR
+L41    NOOP
+       MOVE t0 4
+       MOVE t1 t0
+       MOVE t0 PLUS t3 t1
+       MOVE t1 t0
+       MOVE t0 PLUS t2 t1
+       MOVE t1 19
+       HSTORE t0 0 t1
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       MOVE t0 9
+       MOVE t3 TIMES t0 4
+       MOVE t0 1
+       MOVE t1 TIMES t0 4
+       MOVE t0 PLUS s0 t1
+       HLOAD t2 t0 0
+       HLOAD t0 t2 0
+       MOVE t1 1
+       MOVE t4 LT t3 t0
+       MOVE t0 MINUS t1 t4
+       CJUMP t0 L42
+       ERROR
+L42    NOOP
+       MOVE t0 4
+       MOVE t1 t0
+       MOVE t0 PLUS t3 t1
+       MOVE t1 t0
+       MOVE t0 PLUS t2 t1
+       MOVE t1 5
+       HSTORE t0 0 t1
+       MOVE t0 0
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+END

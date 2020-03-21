@@ -1,0 +1,1079 @@
+MAIN [0][0][1]
+       MOVE t0 HALLOCATE 4
+       MOVE t1 HALLOCATE 4
+       MOVE t2 BT_Start
+       HSTORE t0 0 t2
+       HSTORE t1 0 t0
+       MOVE t0 t1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 0
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       PRINT t1
+END
+BT_Start [1][2][2]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       MOVE s0 a0
+       MOVE t0 HALLOCATE 80
+       MOVE t1 HALLOCATE 28
+       MOVE t2 Tree_RecPrint
+       HSTORE t0 76 t2
+       MOVE t2 Tree_Print
+       HSTORE t0 72 t2
+       MOVE t2 Tree_Search
+       HSTORE t0 68 t2
+       MOVE t2 Tree_RemoveLeft
+       HSTORE t0 64 t2
+       MOVE t2 Tree_RemoveRight
+       HSTORE t0 60 t2
+       MOVE t2 Tree_Remove
+       HSTORE t0 56 t2
+       MOVE t2 Tree_Delete
+       HSTORE t0 52 t2
+       MOVE t2 Tree_Insert
+       HSTORE t0 48 t2
+       MOVE t2 Tree_Compare
+       HSTORE t0 44 t2
+       MOVE t2 Tree_SetHas_Right
+       HSTORE t0 40 t2
+       MOVE t2 Tree_SetHas_Left
+       HSTORE t0 36 t2
+       MOVE t2 Tree_GetHas_Left
+       HSTORE t0 32 t2
+       MOVE t2 Tree_GetHas_Right
+       HSTORE t0 28 t2
+       MOVE t2 Tree_SetKey
+       HSTORE t0 24 t2
+       MOVE t2 Tree_GetKey
+       HSTORE t0 20 t2
+       MOVE t2 Tree_GetLeft
+       HSTORE t0 16 t2
+       MOVE t2 Tree_GetRight
+       HSTORE t0 12 t2
+       MOVE t2 Tree_SetLeft
+       HSTORE t0 8 t2
+       MOVE t2 Tree_SetRight
+       HSTORE t0 4 t2
+       MOVE t2 Tree_Init
+       HSTORE t0 0 t2
+       MOVE t2 4
+L2     NOOP
+       MOVE t3 28
+       MOVE t4 LT t2 t3
+       CJUMP t4 L3
+       MOVE t3 PLUS t1 t2
+       MOVE t4 0
+       HSTORE t3 0 t4
+       MOVE t2 PLUS t2 4
+       JUMP L2
+L3     NOOP
+       HSTORE t1 0 t0
+       MOVE s1 t1
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 0
+       MOVE t1 16
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 72
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+              MOVE t0 100000000
+       PRINT t0
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 48
+       MOVE t1 8
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 72
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 48
+       MOVE t1 24
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 48
+       MOVE t1 4
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 48
+       MOVE t1 12
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 48
+       MOVE t1 20
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 48
+       MOVE t1 28
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 48
+       MOVE t1 14
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 72
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 68
+       MOVE t1 24
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+       PRINT t3
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 68
+       MOVE t1 12
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+       PRINT t3
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 68
+       MOVE t1 16
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+       PRINT t3
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 68
+       MOVE t1 50
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+       PRINT t3
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 68
+       MOVE t1 12
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+       PRINT t3
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 52
+       MOVE t1 12
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 72
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 68
+       MOVE t1 12
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+       PRINT t3
+       MOVE t0 0
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+END
+Tree_Init [2][2][0]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       MOVE s0 a0
+       MOVE s1 a1
+       HSTORE s0 12 s1
+       MOVE t0 0
+       HSTORE s0 16 t0
+       MOVE t0 0
+       HSTORE s0 20 t0
+       MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+END
+Tree_SetRight [2][2][0]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       MOVE s0 a0
+       MOVE s1 a1
+       HSTORE s0 8 s1
+       MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+END
+Tree_SetLeft [2][2][0]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       MOVE s0 a0
+       MOVE s1 a1
+       HSTORE s0 4 s1
+       MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+END
+Tree_GetRight [1][1][0]
+       ASTORE SPILLEDARG 0 s0
+       MOVE s0 a0
+       HLOAD t0 s0 8
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+END
+Tree_GetLeft [1][1][0]
+       ASTORE SPILLEDARG 0 s0
+       MOVE s0 a0
+       HLOAD t0 s0 4
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+END
+Tree_GetKey [1][1][0]
+       ASTORE SPILLEDARG 0 s0
+       MOVE s0 a0
+       HLOAD t0 s0 12
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+END
+Tree_SetKey [2][2][0]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       MOVE s0 a0
+       MOVE s1 a1
+       HSTORE s0 12 s1
+       MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+END
+Tree_GetHas_Right [1][1][0]
+       ASTORE SPILLEDARG 0 s0
+       MOVE s0 a0
+       HLOAD t0 s0 20
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+END
+Tree_GetHas_Left [1][1][0]
+       ASTORE SPILLEDARG 0 s0
+       MOVE s0 a0
+       HLOAD t0 s0 16
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+END
+Tree_SetHas_Left [2][2][0]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       MOVE s0 a0
+       MOVE s1 a1
+       HSTORE s0 16 s1
+       MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+END
+Tree_SetHas_Right [2][2][0]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       MOVE s0 a0
+       MOVE s1 a1
+       HSTORE s0 20 s1
+       MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+END
+Tree_Compare [3][3][0]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       ASTORE SPILLEDARG 2 s2
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE s2 a2
+       MOVE t1 0
+       MOVE t0 PLUS s2 1
+       MOVE t1 LT s1 s2
+       CJUMP t1 L4
+       MOVE t1 0
+       JUMP L5
+L4     NOOP
+       MOVE t2 1
+       MOVE t3 LT s1 t0
+       MOVE t0 MINUS t2 t3
+       CJUMP t0 L6
+       MOVE t1 0
+       JUMP L7
+L6     NOOP
+       MOVE t1 1
+L7     NOOP
+L5     NOOP
+       MOVE v0 t1
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+       ALOAD s2 SPILLEDARG 2
+END
+Tree_Insert [2][5][2]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       ASTORE SPILLEDARG 2 s2
+       ASTORE SPILLEDARG 3 s3
+       ASTORE SPILLEDARG 4 s4
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE t0 HALLOCATE 80
+       MOVE t1 HALLOCATE 28
+       MOVE t2 Tree_RecPrint
+       HSTORE t0 76 t2
+       MOVE t2 Tree_Print
+       HSTORE t0 72 t2
+       MOVE t2 Tree_Search
+       HSTORE t0 68 t2
+       MOVE t2 Tree_RemoveLeft
+       HSTORE t0 64 t2
+       MOVE t2 Tree_RemoveRight
+       HSTORE t0 60 t2
+       MOVE t2 Tree_Remove
+       HSTORE t0 56 t2
+       MOVE t2 Tree_Delete
+       HSTORE t0 52 t2
+       MOVE t2 Tree_Insert
+       HSTORE t0 48 t2
+       MOVE t2 Tree_Compare
+       HSTORE t0 44 t2
+       MOVE t2 Tree_SetHas_Right
+       HSTORE t0 40 t2
+       MOVE t2 Tree_SetHas_Left
+       HSTORE t0 36 t2
+       MOVE t2 Tree_GetHas_Left
+       HSTORE t0 32 t2
+       MOVE t2 Tree_GetHas_Right
+       HSTORE t0 28 t2
+       MOVE t2 Tree_SetKey
+       HSTORE t0 24 t2
+       MOVE t2 Tree_GetKey
+       HSTORE t0 20 t2
+       MOVE t2 Tree_GetLeft
+       HSTORE t0 16 t2
+       MOVE t2 Tree_GetRight
+       HSTORE t0 12 t2
+       MOVE t2 Tree_SetLeft
+       HSTORE t0 8 t2
+       MOVE t2 Tree_SetRight
+       HSTORE t0 4 t2
+       MOVE t2 Tree_Init
+       HSTORE t0 0 t2
+       MOVE t2 4
+L8     NOOP
+       MOVE t3 28
+       MOVE t4 LT t2 t3
+       CJUMP t4 L9
+       MOVE t3 PLUS t1 t2
+       MOVE t4 0
+       HSTORE t3 0 t4
+       MOVE t2 PLUS t2 4
+       JUMP L8
+L9     NOOP
+       HSTORE t1 0 t0
+       MOVE s2 t1
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 0
+       MOVE a0 t0
+       MOVE a1 s1
+       CALL t2
+       MOVE t1 v0
+              MOVE s3 s0
+       MOVE s4 1
+L10    NOOP
+       CJUMP s4 L11
+       MOVE t0 s3
+       HLOAD t1 t0 0
+       HLOAD t2 t1 20
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE t0 t1
+       MOVE t1 LT s1 t0
+       CJUMP t1 L12
+       MOVE t0 s3
+       HLOAD t1 t0 0
+       HLOAD t2 t1 32
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L14
+       MOVE t0 s3
+       HLOAD t1 t0 0
+       HLOAD t2 t1 16
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s3 t1
+       JUMP L15
+L14    NOOP
+       MOVE s4 0
+       MOVE t0 s3
+       HLOAD t1 t0 0
+       HLOAD t2 t1 36
+       MOVE t1 1
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s3
+       HLOAD t1 t0 0
+       HLOAD t2 t1 8
+       MOVE a0 t0
+       MOVE a1 s2
+       CALL t2
+       MOVE t1 v0
+       L15    NOOP
+       JUMP L13
+L12    NOOP
+       MOVE t0 s3
+       HLOAD t1 t0 0
+       HLOAD t2 t1 28
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L16
+       MOVE t0 s3
+       HLOAD t1 t0 0
+       HLOAD t2 t1 12
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s3 t1
+       JUMP L17
+L16    NOOP
+       MOVE s4 0
+       MOVE t0 s3
+       HLOAD t1 t0 0
+       HLOAD t2 t1 40
+       MOVE t1 1
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s3
+       HLOAD t1 t0 0
+       HLOAD t2 t1 4
+       MOVE a0 t0
+       MOVE a1 s2
+       CALL t2
+       MOVE t1 v0
+       L17    NOOP
+L13    NOOP
+       JUMP L10
+L11    NOOP
+       MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+       ALOAD s2 SPILLEDARG 2
+       ALOAD s3 SPILLEDARG 3
+       ALOAD s4 SPILLEDARG 4
+END
+Tree_Delete [2][10][3]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       ASTORE SPILLEDARG 2 s2
+       ASTORE SPILLEDARG 3 s3
+       ASTORE SPILLEDARG 4 s4
+       ASTORE SPILLEDARG 6 s6
+       ASTORE SPILLEDARG 7 s7
+       ASTORE SPILLEDARG 8 s5
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE s2 s0
+       MOVE s3 s0
+       MOVE s4 1
+       MOVE v1 0
+       ASTORE SPILLEDARG 5 v1
+       MOVE s6 1
+L18    NOOP
+       CJUMP s4 L19
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 20
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s7 t1
+       MOVE t0 LT s1 s7
+       CJUMP t0 L20
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 32
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L22
+       MOVE s3 s2
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 16
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s2 t1
+       JUMP L23
+L22    NOOP
+       MOVE s4 0
+L23    NOOP
+       JUMP L21
+L20    NOOP
+       MOVE t0 LT s7 s1
+       CJUMP t0 L24
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 28
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L26
+       MOVE s3 s2
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 12
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s2 t1
+       JUMP L27
+L26    NOOP
+       MOVE s4 0
+L27    NOOP
+       JUMP L25
+L24    NOOP
+       CJUMP s6 L28
+       MOVE s7 0
+       MOVE s5 1
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 28
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE t0 MINUS s5 t1
+       CJUMP t0 L32
+       MOVE s5 1
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 32
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE t0 MINUS s5 t1
+       CJUMP t0 L32
+       MOVE s7 1
+L32    NOOP
+       CJUMP s7 L30
+              JUMP L31
+L30    NOOP
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 56
+       MOVE a0 t0
+       MOVE a1 s3
+       MOVE a2 s2
+       CALL t2
+       MOVE t1 v0
+       L31    NOOP
+       JUMP L29
+L28    NOOP
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 56
+       MOVE a0 t0
+       MOVE a1 s3
+       MOVE a2 s2
+       CALL t2
+       MOVE t1 v0
+       L29    NOOP
+       ALOAD v1 SPILLEDARG 5
+       MOVE v1 1
+       ASTORE SPILLEDARG 9 v1
+       MOVE s4 0
+L25    NOOP
+L21    NOOP
+       MOVE s6 0
+       JUMP L18
+L19    NOOP
+ALOAD v1 SPILLEDARG 9
+              MOVE v0 v1
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+       ALOAD s2 SPILLEDARG 2
+       ALOAD s3 SPILLEDARG 3
+       ALOAD s4 SPILLEDARG 4
+       ALOAD s5 SPILLEDARG 8
+       ALOAD s6 SPILLEDARG 6
+       ALOAD s7 SPILLEDARG 7
+END
+Tree_Remove [3][4][3]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       ASTORE SPILLEDARG 2 s2
+       ASTORE SPILLEDARG 3 s3
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE s2 a2
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 32
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L33
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 64
+       MOVE a0 t0
+       MOVE a1 s1
+       MOVE a2 s2
+       CALL t2
+       MOVE t1 v0
+              JUMP L34
+L33    NOOP
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 28
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L35
+       MOVE t0 s0
+       HLOAD t1 t0 0
+       HLOAD t2 t1 60
+       MOVE a0 t0
+       MOVE a1 s1
+       MOVE a2 s2
+       CALL t2
+       MOVE t1 v0
+              JUMP L36
+L35    NOOP
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 20
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s3 t1
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 16
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE t0 t1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 20
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE t0 t1
+       MOVE t1 s0
+       HLOAD t2 t1 0
+       HLOAD t3 t2 44
+       MOVE a0 t1
+       MOVE a1 s3
+       MOVE a2 t0
+       CALL t3
+       MOVE t2 v0
+       CJUMP t2 L37
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 8
+       HLOAD t1 s0 24
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 36
+       MOVE t1 0
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              JUMP L38
+L37    NOOP
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 4
+       HLOAD t1 s0 24
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 40
+       MOVE t1 0
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+       L38    NOOP
+L36    NOOP
+L34    NOOP
+       MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+       ALOAD s2 SPILLEDARG 2
+       ALOAD s3 SPILLEDARG 3
+END
+Tree_RemoveRight [3][5][2]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       ASTORE SPILLEDARG 2 s2
+       ASTORE SPILLEDARG 3 s3
+       ASTORE SPILLEDARG 4 s4
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE s2 a2
+L39    NOOP
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 28
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L40
+       MOVE s3 s2
+       HLOAD t0 s3 0
+       HLOAD s4 t0 24
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 12
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE t0 t1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 20
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE a0 s3
+       MOVE a1 t1
+       CALL s4
+       MOVE t0 v0
+              MOVE s1 s2
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 12
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s2 t1
+       JUMP L39
+L40    NOOP
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 4
+       HLOAD t1 s0 24
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 40
+       MOVE t1 0
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+       ALOAD s2 SPILLEDARG 2
+       ALOAD s3 SPILLEDARG 3
+       ALOAD s4 SPILLEDARG 4
+END
+Tree_RemoveLeft [3][5][2]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       ASTORE SPILLEDARG 2 s2
+       ASTORE SPILLEDARG 3 s3
+       ASTORE SPILLEDARG 4 s4
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE s2 a2
+L41    NOOP
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 32
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L42
+       MOVE s3 s2
+       HLOAD t0 s3 0
+       HLOAD s4 t0 24
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 16
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE t0 t1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 20
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE a0 s3
+       MOVE a1 t1
+       CALL s4
+       MOVE t0 v0
+              MOVE s1 s2
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 16
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s2 t1
+       JUMP L41
+L42    NOOP
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 8
+       HLOAD t1 s0 24
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 36
+       MOVE t1 0
+       MOVE a0 t0
+       MOVE a1 t1
+       CALL t2
+       MOVE t3 v0
+              MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+       ALOAD s2 SPILLEDARG 2
+       ALOAD s3 SPILLEDARG 3
+       ALOAD s4 SPILLEDARG 4
+END
+Tree_Search [2][6][1]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       ASTORE SPILLEDARG 2 s2
+       ASTORE SPILLEDARG 3 s3
+       ASTORE SPILLEDARG 4 s4
+       ASTORE SPILLEDARG 5 s5
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE s2 s0
+       MOVE s3 1
+       MOVE s4 0
+L43    NOOP
+       CJUMP s3 L44
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 20
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s5 t1
+       MOVE t0 LT s1 s5
+       CJUMP t0 L45
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 32
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L47
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 16
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s2 t1
+       JUMP L48
+L47    NOOP
+       MOVE s3 0
+L48    NOOP
+       JUMP L46
+L45    NOOP
+       MOVE t0 LT s5 s1
+       CJUMP t0 L49
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 28
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L51
+       MOVE t0 s2
+       HLOAD t1 t0 0
+       HLOAD t2 t1 12
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE s2 t1
+       JUMP L52
+L51    NOOP
+       MOVE s3 0
+L52    NOOP
+       JUMP L50
+L49    NOOP
+       MOVE s4 1
+       MOVE s3 0
+L50    NOOP
+L46    NOOP
+       JUMP L43
+L44    NOOP
+       MOVE v0 s4
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+       ALOAD s2 SPILLEDARG 2
+       ALOAD s3 SPILLEDARG 3
+       ALOAD s4 SPILLEDARG 4
+       ALOAD s5 SPILLEDARG 5
+END
+Tree_Print [1][1][2]
+       ASTORE SPILLEDARG 0 s0
+       MOVE s0 a0
+       MOVE t0 s0
+       MOVE t1 s0
+       HLOAD t2 t1 0
+       HLOAD t3 t2 76
+       MOVE a0 t1
+       MOVE a1 t0
+       CALL t3
+       MOVE t2 v0
+              MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+END
+Tree_RecPrint [2][4][2]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       ASTORE SPILLEDARG 2 s2
+       ASTORE SPILLEDARG 3 s3
+       MOVE s0 a0
+       MOVE s1 a1
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 32
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L53
+       MOVE s2 s0
+       HLOAD t0 s2 0
+       HLOAD s3 t0 76
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 16
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE a0 s2
+       MOVE a1 t1
+       CALL s3
+       MOVE t0 v0
+              JUMP L54
+L53    NOOP
+       L54    NOOP
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 20
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       PRINT t1
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 28
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       CJUMP t1 L55
+       MOVE s2 s0
+       HLOAD t0 s2 0
+       HLOAD s3 t0 76
+       MOVE t0 s1
+       HLOAD t1 t0 0
+       HLOAD t2 t1 12
+       MOVE a0 t0
+       CALL t2
+       MOVE t1 v0
+       MOVE a0 s2
+       MOVE a1 t1
+       CALL s3
+       MOVE t0 v0
+              JUMP L56
+L55    NOOP
+       L56    NOOP
+       MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+       ALOAD s2 SPILLEDARG 2
+       ALOAD s3 SPILLEDARG 3
+END
