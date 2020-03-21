@@ -92,6 +92,12 @@ class RIG {
 			removeRelated(new MoveRelated(m.n2, m.n1));
 			return;
 		}
+		// otherwise, a temperal variable that is created for managing spilling
+		// may be spilled again. This may cause a dead loop;
+		if (m.n1.reg.isTemperal() && !m.n2.reg.isSpecial()) {
+			removeRelated(new MoveRelated(m.n2, m.n1));
+			return;
+		}
 		m.n2.alias = m.n1;
 		m.n1.freeze += m.n2.freeze - 2;
 		m.n2.freeze = 0;
@@ -218,16 +224,6 @@ class RIG {
 	// return null if successfully colored the graph
 	// otherwise, return the spilled temperal variable
 	TempReg main() {
-		ListIterator<MoveRelated> iter = moveRelated.listIterator();
-		while(iter.hasNext()) {
-			MoveRelated m = iter.next();
-			if (m.n1.repel.contains(m.n2)) {
-				m.n1.freeze -= 1;
-				m.n2.freeze -= 1;
-				iter.remove();
-			}
-		}
-
 		while (true) {
 			Node n = findInsignificantNode();
 			if (n != null) {
@@ -235,6 +231,18 @@ class RIG {
 				removeNode(n);
 				continue;
 			}
+
+			ListIterator<MoveRelated> iter = moveRelated.listIterator();
+			while(iter.hasNext()) {
+				MoveRelated m = iter.next();
+				m.update();
+				if (m.n1.repel.contains(m.n2)) {
+					m.n1.freeze -= 1;
+					m.n2.freeze -= 1;
+					iter.remove();
+				}
+			}
+
 			MoveRelated m = findMoveRelated();
 			if (m != null) {
 				Info.dump("coalesce move-related nodes " + m);
@@ -314,6 +322,14 @@ class TempReg extends SimpleExp {
 
 	boolean isPrealloc() {
 		return SPECIAL_REG <= num && num < SPECIAL_REG + NUM_REG;
+	}
+
+	boolean isSpecial() {
+		return num >= SPECIAL_REG;
+	}
+
+	boolean isTemperal() {
+		return num >= SPECIAL_REG + NUM_REG;
 	}
 
 	static TempReg newTemp() {
@@ -606,7 +622,7 @@ class ProcBlock {
 		stackSize = numOfParams;
 		analyzeJump();
 		analyzeCalleeSavedRegisters();
-		for (int t = 0; t < 2; t++) {
+		for (int t = 0; t < 32; t++) {
 		// while (true) {
 			analyzeLiveness();
 			TempReg spilled = analyzeInterference();
