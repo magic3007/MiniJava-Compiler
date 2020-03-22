@@ -23,4 +23,4 @@ jobs:
         make
         make build
     - name: Run Test
-      run: make test -j1
+      run: make test -j8
