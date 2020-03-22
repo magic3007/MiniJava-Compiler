@@ -100,22 +100,25 @@ endef
 	@rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output
 
 %.testmj: $(TEST_MJ_DIR)/%.java
-	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
 	@$(call typecheck)
-	@grep $(OkText) $(TEMP_DIR)/std.$@.output > /dev/null; \
+	@grep $(OkText) $(TEMP_DIR)/std.$@.output >/dev/null; \
 	if [ $$? -eq 0 ]; then \
 		$(JAVA) $< > $(TEMP_DIR)/std.$@.output 2>/dev/null; \
-		if [ $$? -ne 0 ] ; then echo "ERROR" >> $(TEMP_DIR)/std.$@.output; fi; \
-		$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -jar $(PGI) >$(TEMP_DIR)/my.$@.output; \
-		diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
-		if [ $$? -eq 0 ];  then \
-			echo "[   J2P   ] passed!" $<; \
-			rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+		if [ $$? -ne 0 ] ; then \
+			echo "ERROR" >> $(TEMP_DIR)/std.$@.output; \
+			echo "[   J2P   ] Runtime Error(Ignore)." $<; \
 		else \
-			echo "[   J2P   ] failed!" $<; \
-			$(JAVA) -cp $(OUT) J2P < $< > $(TEMP_DIR)/dump.$@.pg && \
-			false; \
-		fi; \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -jar $(PGI) >$(TEMP_DIR)/my.$@.output; \
+			diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			if [ $$? -eq 0 ];  then \
+				echo "[   J2P   ] passed!" $<; \
+				rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			else \
+				echo "[   J2P   ] failed!" $<; \
+				$(JAVA) -cp $(OUT) J2P < $< > $(TEMP_DIR)/dump.$@.pg && \
+				false; \
+			fi; \
+		fi;\
 	else \
 		echo "[   J2P   ] Type Error(Ignore)." $<; \
 	fi
