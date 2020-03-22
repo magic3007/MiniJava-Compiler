@@ -20,6 +20,26 @@ class Type {
 		}
 		return this.getClass().getSimpleName();
 	}
+
+	static void typeCastCheck(final Type from, final Type to) {
+		if (from instanceof PrimitiveType) {
+			if (!from.getClass().equals(to.getClass())) {
+				Info.panic("incompatible primitive type " + from + " -> " + to);
+			}
+		} else if (to instanceof PrimitiveType) {
+			Info.panic("cast ClassType to PrimitiveType " + from + " -> " + to);
+		} else {
+			ClassType a = (ClassType) from;
+			final ClassType b = (ClassType) to;
+			while (a != null) {
+				if (a.name.equals(b.name)) {
+					return;
+				}
+				a = a.superclass;
+			}
+			Info.panic("cast to derived class failed " + from + " -> " + to);
+		}
+	}
 }
 
 class PrimitiveType extends Type {
@@ -36,6 +56,7 @@ class ArrType extends PrimitiveType {
 
 class VoidType extends PrimitiveType {
 }
+
 
 class Variable {
 	Type type;
@@ -165,7 +186,6 @@ class ClassType extends Type {
 		VariableList param;
 		VariableList temp;
 
-		// TODO: check if paramNames conflit with tempNames
 
 		Method() {
 			param = new VariableList();
@@ -263,6 +283,15 @@ class ClassType extends Type {
 		return -1;
 	}
 
+	Method getDynamicMethodByName(String name){
+		for(Method method : dynamicMethods){
+			if(method.name.equals(name)){
+				return method;
+			}
+		}
+		return null;
+	}
+
 	int sizeOfClass() {
 		return sizeOfSuperClasses + field.size();
 	}
@@ -271,11 +300,30 @@ class ClassType extends Type {
 		return dynamicMethods.size();
 	}
 
+	static boolean isVariablesTypeSame(VariableList a, VariableList b) {
+		if (a. size() != b. size()) return false;
+		for(int i = 0; i < a.size(); i++){
+			if(!a.get(i).type.toString().equals(b.get(i).type.toString())) return false;
+		}
+		return true;
+	}
+
+	enum EnumAnalyzeState{
+		UNDO, ONGOING, DONE;
+	}
+	EnumAnalyzeState analyzeState = EnumAnalyzeState.UNDO;
+
 	void analyze() {
+		if (analyzeState.equals(EnumAnalyzeState.ONGOING)) {
+			Info.panic("Recursive Extension.");
+		}
+
 		// if have been analyzed
 		if (!(dynamicMethods == null)) {
 			return;
 		}
+
+		analyzeState = EnumAnalyzeState.ONGOING;
 
 		if (superclass != null) {
 			superclass.analyze();
@@ -291,10 +339,17 @@ class ClassType extends Type {
 			if (i < 0) {
 				dynamicMethods.add(method);
 			} else {
+				Method superMethod = getDynamicMethodByName(method.name);
+				if(isVariablesTypeSame(method.param, superMethod.param) == false) {
+					Info.panic("Overloading is not allowed in MiniJava!");
+				}
 				// override the superclass's method
+				typeCastCheck(method.returnType, superMethod.returnType);
 				dynamicMethods.set(i, method);
 			}
 		}
+
+		analyzeState = EnumAnalyzeState.DONE;
 	}
 }
 

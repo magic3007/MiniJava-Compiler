@@ -115,6 +115,9 @@ class ScanClassMethods extends DepthFirstVisitor {
 		final Type type = (Type) option.value;
 		final String name = node.f1.f0.tokenImage;
 		if (selfMethod != null) {
+			if (selfMethod.param.lookupByName(name) != null) {
+				Info.panic("temporary variable name has conflict with parameter name");
+			}
 			selfMethod.temp.add(type, name);
 		} else {
 			selfClass.field.add(type, name);
@@ -170,7 +173,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		e.emitClose();
 		e.emitOpen("RETURN");
 		final Type returnType = node.f10.accept(this);
-		typeCastCheck(returnType, method.returnType);
+		Type.typeCastCheck(returnType, method.returnType);
 		selfMethod = null;
 		e.emitClose("/* end", method.getLabel(), "*/", "END");
 		return null;
@@ -344,25 +347,6 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		}
 	}
 
-	void typeCastCheck(final Type from, final Type to) {
-		if (from instanceof PrimitiveType) {
-			if (!from.getClass().equals(to.getClass())) {
-				Info.panic("incompatible primitive type " + from + " -> " + to);
-			}
-		} else if (to instanceof PrimitiveType) {
-			Info.panic("cast ClassType to PrimitiveType " + from + " -> " + to);
-		} else {
-			ClassType a = (ClassType) from;
-			final ClassType b = (ClassType) to;
-			while (a != null) {
-				if (a.name.equals(b.name)) {
-					return;
-				}
-				a = a.superclass;
-			}
-			Info.panic("cast to derived class failed " + from + " -> " + to);
-		}
-	}
 
 	/**
 	 * a.b(...)
@@ -399,7 +383,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		}
 
 		for (int i = 0; i < length; i++) {
-			typeCastCheck(args.get(i), method.param.get(i).type);
+			Type.typeCastCheck(args.get(i), method.param.get(i).type);
 		}
 
 		e.emitClose(")");
@@ -557,7 +541,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		final Type a = selfMethod.getTypeByName(name);
 		selfMethod.emitAssignByName(e, name);
 		final Type b = n.f2.accept(this);
-		typeCastCheck(b, a);
+		Type.typeCastCheck(b, a);
 		return null;
 	}
 
