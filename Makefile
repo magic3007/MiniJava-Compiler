@@ -102,7 +102,7 @@ endef
 		echo "[TypeCheck] failed!" $< && \
 		false; \
 	fi
-	@rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output
+	@-rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output
 
 %.testmj: $(TEST_MJ_DIR)/%.java
 	@$(call typecheck)
@@ -141,6 +141,7 @@ endef
 	@diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
 	if [ $$? -eq 0 ]; then \
 		echo "[   P2S   ] passed!" $<; \
+		rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
 	else \
 		echo "[   P2S   ] failed!" $<; \
 		$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.$@.spg && \
@@ -161,3 +162,17 @@ endef
 		false; \
 	fi
 
+%.testkg: $(TEST_SPGI_DIR)/%.spg
+	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
+	@$(JAVA) -jar $(PGI) < $< >$(TEMP_DIR)/std.$@.output
+	@$(JAVA) -cp $(OUT) S2K < $< | $(JAVA) -jar $(KGI) >$(TEMP_DIR)/my.$@.output
+	@diff $(TEMP_DIR)/my.$@.output $(TEMP_DIR)/std.$@.output
+	@if [ $$? -eq 0 ]; then \
+		echo "[   S2K   ] passed!" $<; \
+		rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+	else \
+		echo "[   S2K   ] failed!" $<; \
+		$(JAVA) -cp $(OUT) S2K < $< > $(OUT)/dump.kg && \
+		$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.$@.spg && \
+		false; \
+	fi
