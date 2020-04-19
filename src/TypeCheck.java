@@ -404,6 +404,12 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	 * 	END ( TEMP 1 TEMP a0 TEMP a1 ... TEMP a_{min(18, n-1)})
 	 */
 	public Type visit(final MessageSend n) {
+		e.emitOpen("CALL", "BEGIN");
+		
+		final String temp1 = e.newTemp();
+		final String temp2 = e.newTemp();
+		e.emitBuf("MOVE", temp1);
+		
 		final Type a = n.f0.accept(this);
 		if (!(a instanceof ClassType)) {
 			Info.panic("MessageSend");
@@ -413,7 +419,6 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		final String methodname = n.f2.f0.tokenImage;
 		final ClassType.Method method = ct.getMethodByName(methodname);
 
-		e.emitOpen("CALL", "BEGIN");
 
 		final PackedTypeAndTemp rv = n.f4.accept(new GetExpressionListType());
 		final List<Type> args = rv.type_list;
@@ -436,10 +441,6 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 			}
 			e.emit("MOVE", temps.get(kMaxMethodParameterCount - 2), temp);
 		}
-		
-		final String temp1 = e.newTemp();
-		final String temp2 = e.newTemp();
-		e.emitBuf("MOVE", temp1);
 
 		e.emitFlush();
 		e.emit("HLOAD", temp2, temp1, "0");
