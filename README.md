@@ -33,3 +33,4 @@ Below are the tools used in this project. The binaries are under `/deps` folder.
 
 - [UCLA CS132](http://web.cs.ucla.edu/~palsberg/course/cs132/project.html)
 - [Gettysburg CS 374](http://cs.gettysburg.edu/~tneller/cs374/)
+- [Software and Documentation](http://compilers.cs.ucla.edu/cs132/setup.html)
