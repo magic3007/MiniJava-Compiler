@@ -140,6 +140,7 @@ class ScanClassMethods extends DepthFirstVisitor {
 // pass 4: Check type
 // and Piglet generation
 
+
 abstract class AbstractGetExpressionType<T> extends GJNoArguDepthFirst<T> {
 }
 
@@ -153,6 +154,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	ClassCollection classes;
 	ClassType selfClass;
 	ClassType.Method selfMethod;
+	final static int kMaxMethodParameterCount = 20;
 
 	public Type visit(final ClassDeclaration node) {
 		selfClass = classes.get(node.f1.f0.tokenImage);
@@ -164,11 +166,28 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		return node.f6.accept(this);
 	}
 
+	/**
+	 * <Method Label> [ $(min(method.numOfParams()+1,20)) ] BEGIN
+	 * 
+	 * $(if method.numOfParams()>=19)
+	 * HLOAD TEMP n   TEMP 19 $(4*(n-19))
+	 * HLOAD TEMP n-1 TEMP 19 $(4*(n-1-19))
+	 * ...
+	 * HLOAD TEMP 20 TEMP 19 4
+	 * HLOAD TEMP 19 TEMP 19 0
+	 * $(endif)
+	*/
 	public Type visit(final MethodDeclaration node) {
 		final String name = node.f2.f0.tokenImage;
 		final ClassType.Method method = selfClass.getMethodByName(name);
 		selfMethod = method;
-		e.emitOpen(method.getLabel(), "[", Integer.toString(method.numOfParams() + 1), "]", "BEGIN");
+		e.emitOpen(method.getLabel(), "[", Integer.toString(Math.min(method.numOfParams() + 1, kMaxMethodParameterCount)), "]", "BEGIN");
+		if (method.numOfParams() + 1 >= kMaxMethodParameterCount){
+			for(int i = method.numOfParams(); i >= 19; i--){
+				e.emit("HLOAD", "TEMP", Integer.toString(i), "TEMP", Integer.toString(kMaxMethodParameterCount -1),
+					Integer.toString(4 * (i - kMaxMethodParameterCount + 1)));
+			}
+		}
 		node.f8.accept(this);
 		e.emitClose();
 		e.emitOpen("RETURN");
@@ -313,16 +332,16 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		}
 	}
 
-	class GetExpressionListType extends AbstractGetExpressionType<List<Type>> {
-		public List<Type> visit(final NodeOptional n) {
+	class GetExpressionListType extends AbstractGetExpressionType<PackedTypeAndTemp> {
+		public PackedTypeAndTemp visit(final NodeOptional n) {
 			if (n.present())
 				return n.node.accept(this);
 			else
-				return new ArrayList<Type>();
+				return new PackedTypeAndTemp();
 		}
 
-		public List<Type> visit(final NodeListOptional n) {
-			final List<Type> rv = new ArrayList<Type>();
+		public PackedTypeAndTemp visit(final NodeListOptional n) {
+			final PackedTypeAndTemp rv = new PackedTypeAndTemp();
 
 			if (!n.present()) {
 				return rv;
@@ -330,36 +349,61 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 
 			for (final Enumeration<Node> e = n.elements(); e.hasMoreElements();) {
 				final ExpressionRest ee = (ExpressionRest) e.nextElement();
-				rv.add(ee.f1.accept(GetExpressionType.this));
+				final String temp = GetExpressionType.this.e.newTemp();
+				GetExpressionType.this.e.emitBuf("MOVE", temp);
+				rv.type_list.add(ee.f1.accept(GetExpressionType.this));
+				rv.temp_list.add(temp);
 				GetExpressionType.this.e.emitFlush();
 			}
 			return rv;
 		}
 
-		public List<Type> visit(final ExpressionList n) {
+		public PackedTypeAndTemp visit(final ExpressionList n) {
 			final Expression e = (Expression) n.f0;
+			final String temp = GetExpressionType.this.e.newTemp();
+			GetExpressionType.this.e.emitBuf("MOVE", temp);
 			final Type t = e.accept(GetExpressionType.this);
 			GetExpressionType.this.e.emitFlush();
-			final List<Type> rv = n.f1.accept(this);
+			final PackedTypeAndTemp rv = n.f1.accept(this);
 			// prepend |e|
-			rv.add(0, t);
+			rv.type_list.add(0, t);
+			rv.temp_list.add(0, temp);
 			return rv;
 		}
 	}
 
 
+	class PackedTypeAndTemp {
+		List<Type> type_list = new ArrayList<Type>();
+		List<String> temp_list = new ArrayList<String>();
+	}
+
 	/**
 	 * a.b(...)
 	 * 
-	 * CALL BEGIN MOVE TEMP 1 a HLOAD TEMP 2 TEMP 1 0 HLOAD TEMP 2 TEMP 2 $(offset
-	 * of b) RETURN TEMP 2 END ( TEMP 1 arg1 arg2 )
+	 * MOVE TEMP a0 arg1
+	 * MOVE TEMP a1 arg2
+	 * ...
+	 * MOVE TEMP an-1 argn
+	 * 
+	 * $(if method.param.size() >= 19)
+	 * MOVE TEMP an HAllOCATE $(4*(method.param.size()-18))
+	 * HSTORE TEMP an 0 TEMP a18
+	 * HSTORE TEMP an 4 TEMP a19
+	 * ...
+	 * HSTORE TEMP an $(4*(method.param.size()-19)) an-1
+	 * MOVE temp a18 an 
+	 * $(endif)
+	 * 
+	 * CALL 
+	 * 	BEGIN 
+	 * 		MOVE TEMP 1 a 
+	 * 		HLOAD TEMP 2 TEMP 1 0 
+	 * 		HLOAD TEMP 2 TEMP 2 $(offset of b) 
+	 * 		RETURN TEMP 2 
+	 * 	END ( TEMP 1 TEMP a0 TEMP a1 ... TEMP a_{min(18, n-1)})
 	 */
 	public Type visit(final MessageSend n) {
-		e.emitOpen("CALL", "BEGIN");
-		final String temp1 = e.newTemp();
-		final String temp2 = e.newTemp();
-		e.emitBuf("MOVE", temp1);
-
 		final Type a = n.f0.accept(this);
 		if (!(a instanceof ClassType)) {
 			Info.panic("MessageSend");
@@ -369,14 +413,12 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		final String methodname = n.f2.f0.tokenImage;
 		final ClassType.Method method = ct.getMethodByName(methodname);
 
-		e.emitFlush();
-		e.emit("HLOAD", temp2, temp1, "0");
-		e.emitBuf("HLOAD", temp2, temp2, e.numToOffset(ct.indexOfMethod(methodname)));
-		e.emitClose("RETURN", temp2, "END", "(");
-		e.emitOpen();
-		e.emit(temp1);
+		e.emitOpen("CALL", "BEGIN");
 
-		final List<Type> args = n.f4.accept(new GetExpressionListType());
+		final PackedTypeAndTemp rv = n.f4.accept(new GetExpressionListType());
+		final List<Type> args = rv.type_list;
+		final List<String> temps = rv.temp_list;
+
 		final int length = args.size();
 		if (length != method.param.size()) {
 			Info.panic("unequal number of arguments " + length + " -> " + method.param.size());
@@ -386,6 +428,28 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 			Type.typeCastCheck(args.get(i), method.param.get(i).type);
 		}
 
+		if (method.param.size() +1 >= kMaxMethodParameterCount){
+			String temp = e.newTemp();
+			e.emit("MOVE", temp, "HALLOCATE", Integer.toString(4 * (method.param.size() - kMaxMethodParameterCount + 2)) );
+			for(int i = kMaxMethodParameterCount - 2; i < method.param.size(); i++){
+				e.emit("HSTORE", temp, Integer.toString(4 * (i - kMaxMethodParameterCount + 2)), temps.get(i));
+			}
+			e.emit("MOVE", temps.get(kMaxMethodParameterCount - 2), temp);
+		}
+		
+		final String temp1 = e.newTemp();
+		final String temp2 = e.newTemp();
+		e.emitBuf("MOVE", temp1);
+
+		e.emitFlush();
+		e.emit("HLOAD", temp2, temp1, "0");
+		e.emitBuf("HLOAD", temp2, temp2, e.numToOffset(ct.indexOfMethod(methodname)));
+		e.emitClose("RETURN", temp2, "END", "(");
+		e.emitOpen();
+		e.emit(temp1);
+		for(int i = 0; i < Math.min(method.numOfParams() , kMaxMethodParameterCount -1); i++) {
+			e.emitBuf(temps.get(i));
+		}
 		e.emitClose(")");
 		return method.returnType;
 	}
