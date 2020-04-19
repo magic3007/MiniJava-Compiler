@@ -2,6 +2,7 @@ import minijava.parser.*;
 import minijava.visitor.*;
 import minijava.syntaxtree.*;
 import java.util.*;
+import java.io.*;
 
 // 1st pass: scan globally for class name
 class ScanForClassName<T extends ClassCollection> extends GJVoidDepthFirst<T> {
@@ -590,8 +591,9 @@ class TypeCheckResult {
 }
 
 public class TypeCheck {
-	static TypeCheckResult TypeCheck(final Emitter e) throws Exception {
-		final MiniJavaParser parser = new MiniJavaParser(System.in);
+	static TypeCheckResult TypeCheck(final Emitter e, String filename) throws Exception {
+		final MiniJavaParser parser = new MiniJavaParser(
+			filename == null ? System.in : new FileInputStream(filename));
 		final ClassCollection classes = new ClassCollection();
 		final Node root = parser.Goal();
 
@@ -607,10 +609,10 @@ public class TypeCheck {
 	public static void main(final String[] args) throws Exception {
 		final Emitter e = new Emitter();
 		if (Info.DEBUG) {
-			TypeCheck(e);
+			TypeCheck(e, args.length > 0 ? args[0] : null);
 		} else {
 			try {
-				TypeCheck(e);
+				TypeCheck(e, args.length > 0 ? args[0] : null);
 			} catch (final Exception e_) {
 				System.out.println("Type error");
 				System.exit(0);
