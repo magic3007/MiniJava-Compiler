@@ -65,12 +65,13 @@ TEST_PGI	 = $(wildcard $(TEST_PGI_DIR)/*.pg)
 TEST_SPGI_DIR = testcases/spiglet
 TEST_SPGI	 = $(wildcard $(TEST_SPGI_DIR)/*.spg)
 
-test: testall testtc testmj testpg testkg 
+test: testtc testmj testpg testkg testmj2spgi testall
 	@echo Congrats! You have passed all the test.
 
 testtc: $(patsubst $(TEST_TC_DIR)/%.java, %.testtc, $(TEST_TC))
 testmj: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
+testmj2spgi: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj2spgi, $(TEST_MJ))
 testkg: $(patsubst $(TEST_SPGI_DIR)/%.spg, %.testkg, $(TEST_SPGI))
 testall: $(patsubst $(TEST_MJ_DIR)/%.java, %.testall, $(TEST_MJ))
 
@@ -115,6 +116,38 @@ endef
 		fi;\
 	else \
 		echo "[   ALL   ] Type Error(Ignore)." $<; \
+	fi
+
+%.testmj2spgi: $(TEST_MJ_DIR)/%.java
+	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
+	@$(call typecheck)
+	@grep $(OkText) $(TEMP_DIR)/std.$@.output >/dev/null; \
+	if [ $$? -eq 0 ]; then \
+		$(JAVA) $< > $(TEMP_DIR)/std.$@.output 2>/dev/null; \
+		if [ $$? -ne 0 ] ; then \
+			echo "ERROR" >> $(TEMP_DIR)/std.$@.output; \
+			echo "[   J2S   ] Runtime Error(Ignore)." $<; \
+		else \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -jar $(SPP) >$(TEMP_DIR)/my.$@.output; \
+			if [ $$? -ne 0 ]; then \
+				echo "[   J2S   ] failed!" $<; \
+				$(JAVA) -cp $(OUT) P2S < $< > $(TEMP_DIR)/dump.$@.spg && \
+				false; \
+			fi; \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -jar $(PGI) > $(TEMP_DIR)/std.$@.output; \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -jar $(PGI) > $(TEMP_DIR)/my.$@.output; \
+			diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			if [ $$? -eq 0 ]; then \
+				echo "[   J2S   ] passed!" $<; \
+				rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			else \
+				echo "[   J2S   ] failed!" $<; \
+				$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.$@.spg && \
+				false; \
+			fi; \
+		fi;	\
+	else \
+		echo "[   J2S   ] Type Error(Ignore)." $<; \
 	fi
 
 %.testtc: $(TEST_TC_DIR)/%.java
@@ -201,3 +234,4 @@ endef
 		$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.$@.spg && \
 		false; \
 	fi
+
