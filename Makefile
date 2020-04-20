@@ -65,13 +65,14 @@ TEST_PGI	 = $(wildcard $(TEST_PGI_DIR)/*.pg)
 TEST_SPGI_DIR = testcases/spiglet
 TEST_SPGI	 = $(wildcard $(TEST_SPGI_DIR)/*.spg)
 
-test: testtc testmj testpg
+test: testtc testmj testpg testkg testall
 	@echo Congrats! You have passed all the test.
 
 testtc: $(patsubst $(TEST_TC_DIR)/%.java, %.testtc, $(TEST_TC))
 testmj: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
 testkg: $(patsubst $(TEST_SPGI_DIR)/%.spg, %.testkg, $(TEST_SPGI))
+testall: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 
 OkText = "Program type checked successfully"
 ErrText = "Type error"
@@ -91,6 +92,30 @@ define typecheck
 	@grep 'legal in MiniJava' $< >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo  $(OkText) > $(TEMP_DIR)/std.$@.output; fi
 endef
+
+%.testall: $(TEST_MJ_DIR)/%.java
+	@$(call typecheck)
+	@grep $(OkText) $(TEMP_DIR)/std.$@.output >/dev/null; \
+	if [ $$? -eq 0 ]; then \
+		$(JAVA) $< > $(TEMP_DIR)/std.$@.output 2>/dev/null; \
+		if [ $$? -ne 0 ] ; then \
+			echo "ERROR" >> $(TEMP_DIR)/std.$@.output; \
+			echo "[   ALL   ] Runtime Error(Ignore)." $<; \
+		else \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -cp $(OUT) S2K | $(JAVA) -jar $(KGI) >$(TEMP_DIR)/my.$@.output; \
+			diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			if [ $$? -eq 0 ];  then \
+				echo "[   ALL   ] passed!" $<; \
+				rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			else \
+				echo "[   ALL   ] failed!" $<; \
+				$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -cp $(OUT) S2K > $(TEMP_DIR)/dump.$@.pg && \
+				false; \
+			fi; \
+		fi;\
+	else \
+		echo "[   ALL   ] Type Error(Ignore)." $<; \
+	fi
 
 %.testtc: $(TEST_TC_DIR)/%.java
 	@$(call typecheck)
