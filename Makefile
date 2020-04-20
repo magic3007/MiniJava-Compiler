@@ -65,14 +65,14 @@ TEST_PGI	 = $(wildcard $(TEST_PGI_DIR)/*.pg)
 TEST_SPGI_DIR = testcases/spiglet
 TEST_SPGI	 = $(wildcard $(TEST_SPGI_DIR)/*.spg)
 
-test: testtc testmj testpg testkg testall
+test: testall testtc testmj testpg testkg 
 	@echo Congrats! You have passed all the test.
 
 testtc: $(patsubst $(TEST_TC_DIR)/%.java, %.testtc, $(TEST_TC))
 testmj: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
 testkg: $(patsubst $(TEST_SPGI_DIR)/%.spg, %.testkg, $(TEST_SPGI))
-testall: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
+testall: $(patsubst $(TEST_MJ_DIR)/%.java, %.testall, $(TEST_MJ))
 
 OkText = "Program type checked successfully"
 ErrText = "Type error"
