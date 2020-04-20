@@ -9,11 +9,11 @@ class argg {
 class Test {
 
     public int f0() {
-        System.out.println(2);
+        System.out.println(12);
         return 1;
     }
     public int f1() {
-        System.out.println(2);
+        System.out.println(6);
         return 2;
     }
 
