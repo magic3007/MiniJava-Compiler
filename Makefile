@@ -12,6 +12,7 @@ MNJ = deps/minijava-parser.jar
 PGI = deps/pgi.jar
 SPP = deps/spp.jar
 KGI = deps/kgi.jar
+SPIM = spim
 
 default: build
 
@@ -63,9 +64,12 @@ TEST_PGI_DIR = testcases/piglet
 TEST_PGI	 = $(wildcard $(TEST_PGI_DIR)/*.pg)
 
 TEST_SPGI_DIR = testcases/spiglet
-TEST_SPGI	 = $(wildcard $(TEST_SPGI_DIR)/*.spg)
+TEST_SPGI	  = $(wildcard $(TEST_SPGI_DIR)/*.spg)
 
-test: testtc testmj testpg testkg testmj2spgi testall
+TEST_KGI_DIR = testcases/kanga
+TEST_KGI	 = $(wildcard $(TEST_KGI_DIR)/*.kg)
+	
+test: testtc testmj testpg testkg testmj2spgi testmp # testall
 	@echo Congrats! You have passed all the test.
 
 testtc: $(patsubst $(TEST_TC_DIR)/%.java, %.testtc, $(TEST_TC))
@@ -73,6 +77,7 @@ testmj: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
 testmj2spgi: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj2spgi, $(TEST_MJ))
 testkg: $(patsubst $(TEST_SPGI_DIR)/%.spg, %.testkg, $(TEST_SPGI))
+testmp: $(patsubst $(TEST_KGI_DIR)/%.kg, %.testmp, $(TEST_KGI))
 testall: $(patsubst $(TEST_MJ_DIR)/%.java, %.testall, $(TEST_MJ))
 
 OkText = "Program type checked successfully"
@@ -235,3 +240,17 @@ endef
 		false; \
 	fi
 
+%.testmp: $(TEST_KGI_DIR)/%.kg
+	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
+	@$(JAVA) -jar $(KGI) < $< >$(TEMP_DIR)/std.$@.output
+	@$(JAVA) -cp $(OUT) K2M < $< > $(TEMP_DIR)/dump.$@.s
+	@$(SPIM) -file $(TEMP_DIR)/dump.$@.s | sed '1,5d' > $(TEMP_DIR)/my.$@.output
+	@diff $(TEMP_DIR)/my.$@.output $(TEMP_DIR)/std.$@.output
+	@if [ $$? -eq 0 ]; then \
+		echo "[   K2M   ] passed!" $<; \
+		rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output $(TEMP_DIR)/dump.$@.s; \
+	else \
+		echo "[   K2M   ] failed!" $<; \
+		$(JAVA) -cp $(OUT) K2M < $< > $(OUT)/dump.s && \
+		false; \
+	fi
