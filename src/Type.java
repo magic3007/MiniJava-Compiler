@@ -335,6 +335,9 @@ class ClassType extends Type {
 		}
 
 		for (Method method : methods) {
+			if (method instanceof StaticMethod){
+				continue;	// ignore static method
+			}
 			int i = indexOfMethod(method.name);
 			if (i < 0) {
 				dynamicMethods.add(method);
