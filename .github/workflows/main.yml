@@ -12,6 +12,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Set up Prequisites
+      run: sudo apt install -y spim
     - name: Set up Java
       uses: actions/setup-java@v1.3.0
       with:

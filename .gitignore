@@ -4,6 +4,9 @@
 # vscode
 .vscode/
 
+# configure
+config.*
+autom4te.cache/
 
 out/
 temp/

@@ -12,6 +12,7 @@ MNJ = deps/minijava-parser.jar
 PGI = deps/pgi.jar
 SPP = deps/spp.jar
 KGI = deps/kgi.jar
+SPIM = spim
 
 default: build
 
@@ -63,16 +64,22 @@ TEST_PGI_DIR = testcases/piglet
 TEST_PGI	 = $(wildcard $(TEST_PGI_DIR)/*.pg)
 
 TEST_SPGI_DIR = testcases/spiglet
-TEST_SPGI	 = $(wildcard $(TEST_SPGI_DIR)/*.spg)
+TEST_SPGI	  = $(wildcard $(TEST_SPGI_DIR)/*.spg)
 
-test: testall testtc testmj testpg testkg 
+TEST_KGI_DIR = testcases/kanga
+TEST_KGI	 = $(wildcard $(TEST_KGI_DIR)/*.kg)
+	
+test: testtc testmj testpg testmj2spg testkg testmj2kg testmp testmj2mp
 	@echo Congrats! You have passed all the test.
 
 testtc: $(patsubst $(TEST_TC_DIR)/%.java, %.testtc, $(TEST_TC))
 testmj: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
 testpg: $(patsubst $(TEST_PGI_DIR)/%.pg, %.testpg, $(TEST_PGI))
+testmj2spg: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj2spg, $(TEST_MJ))
 testkg: $(patsubst $(TEST_SPGI_DIR)/%.spg, %.testkg, $(TEST_SPGI))
-testall: $(patsubst $(TEST_MJ_DIR)/%.java, %.testall, $(TEST_MJ))
+testmj2kg: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj2kg, $(TEST_MJ))
+testmp: $(patsubst $(TEST_KGI_DIR)/%.kg, %.testmp, $(TEST_KGI))
+testmj2mp: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj2mp, $(TEST_MJ))
 
 OkText = "Program type checked successfully"
 ErrText = "Type error"
@@ -92,30 +99,6 @@ define typecheck
 	@grep 'legal in MiniJava' $< >/dev/null; \
 	if [ $$? -eq 0 ] ; then echo  $(OkText) > $(TEMP_DIR)/std.$@.output; fi
 endef
-
-%.testall: $(TEST_MJ_DIR)/%.java
-	@$(call typecheck)
-	@grep $(OkText) $(TEMP_DIR)/std.$@.output >/dev/null; \
-	if [ $$? -eq 0 ]; then \
-		$(JAVA) $< > $(TEMP_DIR)/std.$@.output 2>/dev/null; \
-		if [ $$? -ne 0 ] ; then \
-			echo "ERROR" >> $(TEMP_DIR)/std.$@.output; \
-			echo "[   ALL   ] Runtime Error(Ignore)." $<; \
-		else \
-			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -cp $(OUT) S2K | $(JAVA) -jar $(KGI) >$(TEMP_DIR)/my.$@.output; \
-			diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
-			if [ $$? -eq 0 ];  then \
-				echo "[   ALL   ] passed!" $<; \
-				rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
-			else \
-				echo "[   ALL   ] failed!" $<; \
-				$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -cp $(OUT) S2K > $(TEMP_DIR)/dump.$@.pg && \
-				false; \
-			fi; \
-		fi;\
-	else \
-		echo "[   ALL   ] Type Error(Ignore)." $<; \
-	fi
 
 %.testtc: $(TEST_TC_DIR)/%.java
 	@$(call typecheck)
@@ -173,6 +156,39 @@ endef
 		false; \
 	fi
 
+%.testmj2spg: $(TEST_MJ_DIR)/%.java
+	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
+	@$(call typecheck)
+	@grep $(OkText) $(TEMP_DIR)/std.$@.output >/dev/null; \
+	if [ $$? -eq 0 ]; then \
+		$(JAVA) $< > $(TEMP_DIR)/std.$@.output 2>/dev/null; \
+		if [ $$? -ne 0 ] ; then \
+			rm $(TEMP_DIR)/std.$@.output; \
+			echo "[   J2S   ] Runtime Error(Ignore)." $<; \
+		else \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -jar $(SPP) >$(TEMP_DIR)/my.$@.output; \
+			if [ $$? -ne 0 ]; then \
+				echo "[   J2S   ] failed!" $<; \
+				$(JAVA) -cp $(OUT) P2S < $< > $(TEMP_DIR)/dump.$@.spg && \
+				false; \
+			fi; \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -jar $(PGI) > $(TEMP_DIR)/std.$@.output; \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -jar $(PGI) > $(TEMP_DIR)/my.$@.output; \
+			diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			if [ $$? -eq 0 ]; then \
+				echo "[   J2S   ] passed!" $<; \
+				rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			else \
+				echo "[   J2S   ] failed!" $<; \
+				$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.$@.spg && \
+				false; \
+			fi; \
+		fi;	\
+	else \
+		rm $(TEMP_DIR)/std.$@.output; \
+		echo "[   J2S   ] Type Error(Ignore)." $<; \
+	fi
+
 %.testkg: $(TEST_SPGI_DIR)/%.spg
 	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
 	@$(JAVA) -jar $(PGI) < $< >$(TEMP_DIR)/std.$@.output
@@ -187,3 +203,69 @@ endef
 		$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.$@.spg && \
 		false; \
 	fi
+
+%.testmj2kg: $(TEST_MJ_DIR)/%.java
+	@$(call typecheck)
+	@grep $(OkText) $(TEMP_DIR)/std.$@.output >/dev/null; \
+	if [ $$? -eq 0 ]; then \
+		$(JAVA) $< > $(TEMP_DIR)/std.$@.output 2>/dev/null; \
+		if [ $$? -ne 0 ] ; then \
+			rm $(TEMP_DIR)/std.$@.output; \
+			echo "[   J2K   ] Runtime Error(Ignore)." $<; \
+		else \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -cp $(OUT) S2K | $(JAVA) -jar $(KGI) >$(TEMP_DIR)/my.$@.output; \
+			diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			if [ $$? -eq 0 ];  then \
+				echo "[   J2K   ] passed!" $<; \
+				rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			else \
+				echo "[   J2K   ] failed!" $<; \
+				$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -cp $(OUT) S2K > $(TEMP_DIR)/dump.$@.pg && \
+				false; \
+			fi; \
+		fi;\
+	else \
+		rm $(TEMP_DIR)/std.$@.output; \
+		echo "[   J2K   ] Type Error(Ignore)." $<; \
+	fi
+
+%.testmp: $(TEST_KGI_DIR)/%.kg
+	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
+	@$(JAVA) -jar $(KGI) < $< >$(TEMP_DIR)/std.$@.output
+	@$(JAVA) -cp $(OUT) K2M < $< > $(TEMP_DIR)/dump.$@.s
+	@$(SPIM) -file $(TEMP_DIR)/dump.$@.s | sed '1,5d' > $(TEMP_DIR)/my.$@.output
+	@diff $(TEMP_DIR)/my.$@.output $(TEMP_DIR)/std.$@.output
+	@if [ $$? -eq 0 ]; then \
+		echo "[   K2M   ] passed!" $<; \
+		rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output $(TEMP_DIR)/dump.$@.s; \
+	else \
+		echo "[   K2M   ] failed!" $<; \
+		$(JAVA) -cp $(OUT) K2M < $< > $(OUT)/dump.s && \
+		false; \
+	fi
+
+%.testmj2mp: $(TEST_MJ_DIR)/%.java
+	@$(call typecheck)
+	@grep $(OkText) $(TEMP_DIR)/std.$@.output >/dev/null; \
+	if [ $$? -eq 0 ]; then \
+		$(JAVA) $< > $(TEMP_DIR)/std.$@.output 2>/dev/null; \
+		if [ $$? -ne 0 ] ; then \
+			rm $(TEMP_DIR)/std.$@.output; \
+			echo "[   J2M   ] Runtime Error(Ignore)." $<; \
+		else \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -cp $(OUT) S2K | $(JAVA) -cp $(OUT) K2M > $(TEMP_DIR)/dump.$@.s; \
+			$(SPIM) -file $(TEMP_DIR)/dump.$@.s | sed '1,5d' > $(TEMP_DIR)/my.$@.output; \
+			diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			if [ $$? -eq 0 ];  then \
+				echo "[   J2M   ] passed!" $<; \
+				rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output $(TEMP_DIR)/dump.$@.s; \
+			else \
+				echo "[   J2M   ] failed!" $<; \
+				$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -cp $(OUT) S2K | $(JAVA) -cp $(OUT) K2M > $(OUT)/dump.s && \
+				false; \
+			fi; \
+		fi;\
+	else \
+		rm $(TEMP_DIR)/std.$@.output; \
+		echo "[   J2M   ] Type Error(Ignore)." $<; \
+	fi	

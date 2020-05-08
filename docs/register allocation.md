@@ -1,35 +1,203 @@
-[Standford cs143](https://web.stanford.edu/class/archive/cs/cs143/cs143.1128/lectures/17/Slides17.pdf)
+## Register Allocation
 
+_Register allocation_ is one of the most fundamental problems in compiler design. This is because every machine has a finite (usually **scarce**) number of registers to hold the temporal variables in the IR code. Therefore, if there are one or more temporal variables that can be assigned a machine register, we have to _spill_ some of temporaries in memory instead of registers. 
 
-The live range for a variable is the set of program points at which that variable is live.
-The live interval for a variable is the smallest subrange of the IR code containing all a variable's live ranges.
+It is not an easy task to minimize the number of temporaries that have to be spilled. The difficulty rises from the fact that this job is a NPC problem. To see why, consider a _register interference graph_ (RIG) in which each node represents a temporary value and each edge ($t_1$, $t_2$) indicates a pair of temporaries that cannot be assigned to the save register. Our challenge is to color all these nodes with $K$ colors, where $K$ is the number of available registers on the machine. The graph coloring problem appears as a NP-complete problem.
 
-linear scan register allocation:
-  very efficient
-  disadvantage: use live intervals rather than live ranges
+Generally, _linear scan_ and _second-chance bin packing_ are two popular approaches that widely used in practice. The major advantage is simplicity. It runs in linear time  and produce good code in many circumstances (e.g., JIT compilers like Java HotSpot). Unfortunately, these methods trade some performance for simplicity and efficiency. 
 
+The Chaitin's Algorithm, a method based on RIG, outperforms linear scan and second-chance bin packing. It is used in production compilers like GCC. Although this algorithm a based on the NP-hard graph coloring problem, it produces excellent assignment of variables to registers. It intelligently and heuristically gives an approximation to the NPC problem.
 
-Second-Chance Bin Packing:
-	A more aggressive version of linear-scan. 
-	Uses live ranges instead of live intervals.
-	If a variable must be spilled, don't spill all uses of it.
+In the lab, we are going to implement a variant of Chaitin's Algorithm for the translation form Spiglet language to Kanga language. In the example testcases, our implementation *always* produces shorter and cleaner code than the example output. 
 
-register interference graph (RIG):
+### Algorithm
 
-- Each node represents a temporary value
-- Each edge (u, v) indicates pair of temporaries that cannot be assigned to the same register. 
+Most of our implementation design aspects follow what is described in _Modern Compiler Implementation in Java (2nd edition)_. The main phases are shown in the figure below.
 
-When to add an interference edge:
+![image-20200322185846797](assets/image-20200322185846797.png)
 
-- u, v are live at the same time
-- we can not produce result at some certain register
+**Build:** First we have to do the liveness analysis. We takes each instruction as a basic block and solve the following equations:
 
-We need to solve the K-coloring problem on the interference graph.
+$$
+\begin{align*}
+in[n] &= use[n] \cup (out[n] - def[n]) \\
+out[n] &= \bigcup_{s \in succ[n]} in[s]
+\end{align*}
+$$
 
-We wish to coalesce only where it is safe to do so, that is, where the coalescing will not render the graph uncolorable. Both of the following strategies are safe:
+Then we build the RIG. Add an edge for two temporaries if they are in the same $in[n]$ or $out[n]$ for some $n$. Notice that if a temporary is defined but not used, it will not appear in any $out[n]$ or $in[n]$, and thus we may mistakenly think it does not interfere with other temporaries. To solve this problem, we simply remove the instruction that defines this unused temporary. The correctness is obvious because that instruction is a kind of dead code and _dead code elimination_ (DCE) does not affect the program results.
 
-- Briggs: Nodes a and b can be coalesced if the resulting node ab will have fewer than K neighbors of significant degree
-- George: Nodes a and b can be coalesced if, for every neighbor t of a, either t already interferes with b or t is of insignificant degree. 
+One the flip side, we must takes pre-allocated registers (a.k.a pre-colored nodes) into consideration. There are two rules for these registers. First, pre-allocated registers interfere with each other. Second, temporaries that live across a function call interfere with all caller-saved registers. Below is the code snippet.
+
+```java
+// pre-allocated registers
+for (int i = 0; i < TempReg.NUM_REG; i++) {
+  for (int j = i + 1; j < TempReg.NUM_REG; j++) {
+    TempReg ri = TempReg.getSpecial(i);
+    TempReg rj = TempReg.getSpecial(j);
+    rig.addInterference(ri, rj);
+  }
+}
+
+// caller-saved registers
+for (Instruction i = dummyFirst.next; i != dummyLast; i = i.next) {
+  if (i instanceof InstrCall) {
+    for (TempReg r : i.in) {
+      if (i.out.contains(r) && !i.def.contains(r)) {
+        for (int j = TempReg.CALLEE_SAVED_REG; j < TempReg.NUM_REG; j++) {
+          rig.addInterference(r, TempReg.getSpecial(j));
+        }
+      }
+    }
+  }
+}
+```
+
+In addition, we leverage the algorithm to save the callee-save registers intelligently by moving a callee-save register to a fresh temporary. If there is *register pressure* in a function, the temporary will spill; otherwise it will be coalesced with the corresponding callee-save register and the MOVE instructions will be eliminated by the procedure that we will soon introduce.
+
+```
+FOO [2][0][0]
+MOVE TEMP 1 s0
+MOVE TEMP 2 s1
+MOVE TEMP 3 s2
+... // the body of the function
+MOVE s2 TEMP 3
+MOVE s1 TEMP 2
+MOVE s0 TEMP 1
+```
+
+**Simplify**: Remove the nodes that is less than $K$ degrees (Here, $K=24$ because MIPS machine has 24 registers) and that is non-move-related. We say a node "move-related"  when the corresponding temporary is used in the instruction `MOVE r1 r2` (`r1` and `r2` are registers).
+
+**Coalesce**: Coalescing means merge two nodes into a new node whose edges are the union of those of the nodes being replaced. This approach is important for eliminating move instructions. We wish to coalesce only where it is safe to do so, that is, where the coalescing will not render the graph uncolorable. Both of the following strategies are safe:
+
+- Briggs: Nodes `a` and `b` can be coalesced if the resulting node `ab` will have fewer than $K$ neighbors.
+- George: Nodes `a` and `b` can be coalesced if, for every neighbor `t` of `a`, either `t` already interferes with `b`.
+
+To maintain the coalescing relation, we resort to _disjoint set union_ (DSU) that is a data structure tracking a set of elements partitioned into a number of disjoint (non-overlapping) subsets. Here the "elements" are all the original nodes and the "disjoint subset" is the union of the coalesced nodes. We use the field `alias` to represent "the parent" of a subset.
+
+```java
+	static class MoveRelated {
+		Node n1, n2;
+
+		MoveRelated(Node n1, Node n2) {
+			this.n1 = n1;
+			this.n2 = n2;
+		}
+    
+		void update() {
+			while (n1.alias != null) {
+				n1 = n1.alias;
+			}
+			while (n2.alias != null) {
+				n2 = n2.alias;
+			}
+		}
+	}
+```
+
+**Freeze**: give up hope of coalescing a move and "simplify" may continue.
+
+**Spill:** select a node for potential spilling and push it on the stack.
+
+**Select:** Pop the entire stack, assigning colors.
+
+**Actual Spill**: If we cannot assign a color to node `n`, we rewrite the program to spill the corresponding temporary. First, we spare a new address for store/fetch the temporary. Second, add store it on the stack after it is defined and fetch it before it is used by an expression. Below is an example:
+
+```
+MOVE TEMP 1 ADD TEMP 2 TEMP 1
+```
+
+After `TEMP 1` is spilled (assume we use a brand new temporary `TEMP 5` for this spilling and the memory address is `SPILLEDARG 10`):
+
+```
+ALOAD TEMP 5 SPILLEDARG 10
+MOVE TEMP5 ADD TEMP2 TEMP 5
+ASTORE SPILLEDARG 10 TEMP 5
+```
+
+### Evaluation
+
+In the example testcases, our implementation *always* produces shorter and cleaner code than the example output. This mainly thanks to the coalescing operation. For code,
+
+```
+Tree_SetRight [2]
+BEGIN
+       HSTORE TEMP 0 8 TEMP 1
+       MOVE TEMP 446 1
+RETURN
+       TEMP 446
+END
+```
+
+the example gives:
+
+```
+Tree_SetRight [2][2][0]
+       ASTORE SPILLEDARG 0 s0
+       ASTORE SPILLEDARG 1 s1
+       MOVE s0 a0
+       MOVE s1 a1
+       HSTORE s0 8 s1
+       MOVE t0 1
+       MOVE v0 t0
+       ALOAD s0 SPILLEDARG 0
+       ALOAD s1 SPILLEDARG 1
+END
+```
+
+ours yields code:
+
+```
+Tree_SetRight [2] [0] [0] 
+	HSTORE a0 8 a1
+	MOVE v0 1 
+END 
+```
+
+We can see that our algorithm effectively uses the valuable registers.
+
+### Future Work
+
+**Label Rewrite**: Rewrite the code
+
+```
+JUMP L2
+...
+JUMP L1
+...
+L2 NOOP
+L1 NOOP
+```
+
+as
+
+```
+JUMP L3
+...
+JUMP L3
+...
+L3 NOOP
+```
+
+**Static Single-Assignment (SSA)** form: Rewrite the program so that each variable has only one definition in the program text. 
+
+> ![An example control flow graph, fully converted to SSA](assets/SSA_example1.3.png)
+>
+> It is clear which definition each use is referring to, except for one case: both uses of y in the bottom block could be referring to either y1 or y2, depending on which path the control flow took.
+>
+> To resolve this, a special statement is inserted in the last block, called a $\phi$ _function_. This statement will generate a new definition of *y* called y3 by "choosing" either y1 or y2, depending on the control flow in the past. (Wikipedia)
+
+**Heuristic Spilling**: Our implementation spill the first node that can be colored. In fact, we can select the node to be spilled in a heuristic manner. That is, we first calculate spill priorities and spill the node with lowest priorities. The priority can be defined as
+$$
+\frac {\text{uses outsides loop}+\text{uses insides loop} \times 10} {\text{Degree}}
+$$
+
+The priority value represents the gained performance if we don't spill this node.
+
+### Reference:
+
+- [Standford cs143](https://web.stanford.edu/class/archive/cs/cs143/cs143.1128/lectures/17/Slides17.pdf)
+- _Modern Compiler Implementation in Java (2nd edition)_
 
 
 

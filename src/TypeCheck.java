@@ -382,23 +382,24 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	/**
 	 * a.b(...)
 	 * 
-	 * MOVE TEMP a0 arg1
-	 * MOVE TEMP a1 arg2
-	 * ...
-	 * MOVE TEMP an-1 argn
-	 * 
-	 * $(if method.param.size() >= 19)
-	 * MOVE TEMP an HAllOCATE $(4*(method.param.size()-18))
-	 * HSTORE TEMP an 0 TEMP a18
-	 * HSTORE TEMP an 4 TEMP a19
-	 * ...
-	 * HSTORE TEMP an $(4*(method.param.size()-19)) an-1
-	 * MOVE temp a18 an 
-	 * $(endif)
-	 * 
-	 * CALL 
-	 * 	BEGIN 
-	 * 		MOVE TEMP 1 a 
+	 * CALL
+	 * 	BEGIN
+	 * 		MOVE temp 1 a
+	 * 		
+	 * 		MOVE TEMP a0 arg1
+	 * 		MOVE TEMP a1 arg2
+	 * 		...
+	 * 		MOVE TEMP an-1 argn
+	 * 		
+	 * 		$(if method.param.size() >= 19)
+	 * 		MOVE TEMP an HAllOCATE $(4*(method.param.size()-18))
+	 * 		HSTORE TEMP an 0 TEMP a18
+	 * 		HSTORE TEMP an 4 TEMP a19
+	 * 		...
+	 * 		HSTORE TEMP an $(4*(method.param.size()-19)) an-1
+	 * 		MOVE temp a18 an 
+	 * 		$(endif)
+			
 	 * 		HLOAD TEMP 2 TEMP 1 0 
 	 * 		HLOAD TEMP 2 TEMP 2 $(offset of b) 
 	 * 		RETURN TEMP 2 

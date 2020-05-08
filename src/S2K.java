@@ -623,7 +623,7 @@ class ProcBlock {
 	}
 
 	void analyze() {
-		stackSize = numOfParams;
+		stackSize = Math.max(numOfParams - 4, 0);
 		analyzeJump();
 		analyzeCalleeSavedRegisters();
 		for (int t = 0; t < 32; t++) {
