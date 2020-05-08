@@ -156,6 +156,39 @@ endef
 		false; \
 	fi
 
+%.testmj2spg: $(TEST_MJ_DIR)/%.java
+	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
+	@$(call typecheck)
+	@grep $(OkText) $(TEMP_DIR)/std.$@.output >/dev/null; \
+	if [ $$? -eq 0 ]; then \
+		$(JAVA) $< > $(TEMP_DIR)/std.$@.output 2>/dev/null; \
+		if [ $$? -ne 0 ] ; then \
+			rm $(TEMP_DIR)/std.$@.output; \
+			echo "[   J2S   ] Runtime Error(Ignore)." $<; \
+		else \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -jar $(SPP) >$(TEMP_DIR)/my.$@.output; \
+			if [ $$? -ne 0 ]; then \
+				echo "[   J2S   ] failed!" $<; \
+				$(JAVA) -cp $(OUT) P2S < $< > $(TEMP_DIR)/dump.$@.spg && \
+				false; \
+			fi; \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -jar $(PGI) > $(TEMP_DIR)/std.$@.output; \
+			$(JAVA) -cp $(OUT) J2P < $< | $(JAVA) -cp $(OUT) P2S | $(JAVA) -jar $(PGI) > $(TEMP_DIR)/my.$@.output; \
+			diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			if [ $$? -eq 0 ]; then \
+				echo "[   J2S   ] passed!" $<; \
+				rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+			else \
+				echo "[   J2S   ] failed!" $<; \
+				$(JAVA) -cp $(OUT) P2S < $< > $(OUT)/dump.$@.spg && \
+				false; \
+			fi; \
+		fi;	\
+	else \
+		rm $(TEMP_DIR)/std.$@.output; \
+		echo "[   J2S   ] Type Error(Ignore)." $<; \
+	fi
+	
 %.testkg: $(TEST_SPGI_DIR)/%.spg
 	@if [ ! -d $(TEMP_DIR) ] ; then mkdir -p $(TEMP_DIR); fi
 	@$(JAVA) -jar $(PGI) < $< >$(TEMP_DIR)/std.$@.output
