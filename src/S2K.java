@@ -475,6 +475,12 @@ class ProcBlock {
 			i.in.clear();
 			i.out.clear();
 		}
+
+		for (int i = 0; i < TempReg.CALLEE_SAVED_REG; i++) {
+			TempReg r = TempReg.getSpecial(i);
+			dummyLast.in.add(r);
+		}
+
 		boolean updated = true;
 		while (updated) {
 			updated = false;
