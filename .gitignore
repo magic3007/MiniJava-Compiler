@@ -15,3 +15,7 @@ src/piglet
 src/spiglet
 src/kanga
 src/mips
+
+# Mac OS
+.DS_Store
+
