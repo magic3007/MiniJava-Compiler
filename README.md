@@ -31,16 +31,11 @@ Below are the tools used in this project. The binaries are under `/deps` folder.
 - [JavaCC](https://javacc.github.io/javacc/): an open-source parser generator and lexical analyzer generator written in the Java
 - [JTB](http://compilers.cs.ucla.edu/jtb/): a syntax tree builder to be used with JavaCC
 
-## References
-
-- [Gettysburg CS 374](http://cs.gettysburg.edu/~tneller/cs374/)
-- [Software and Documentation](http://compilers.cs.ucla.edu/cs132/setup.html)
-- [Standford cs143](https://web.stanford.edu/class/archive/cs/cs143/cs143.1128/lectures/17/Slides17.pdf)
-- _Modern Compiler Implementation in Java (2nd edition)_
-
 -----------
 
-## Semantics analysis
+## Semantics Analysis
+
+### Algorithm
 
 Because Java is a typed language, we should implement type checking for its subset (i.e., MiniJava).
 
@@ -67,6 +62,86 @@ The checker does the type checking in four passes:
 3. Collect all the methods and their signatures.
 4. Traverse the AST to compute the type of each expression. In the same pass, the checker also check every type constrain.
 
+### Evaluation
+
+There are some corner cases that should be identified as `Type Error` when doing semantics analysis. We are going to list them here.
+
+1. Circular inheritance. With simple graph theoy, we can check whether a loop in the directed inheritance graph using Depth First Search tree within $O(n)$ time, where the $n$ is the number of classes.
+2. The overriden method has different return type.
+3. A temporary variable declared in a method body has the same name with one of the method argument names.
+
+## IR Generation (1)
+
+In the first part of the IR generation, we are going to translate Minijava into Piglet that is an IR with structured scoping, or tree-based instruction (while we will sonn see Spiglet is an IR without structured scoping). 
+
+### Algorithm
+
+The most interesting part is the memory layout. We now discuss the integer arrays and objects.
+
+The memory representation of the code snippet below are shown in the figure. The variable is fundamentaly a pointer to a table. The first element of the table is the length of the array (in our example, the length is 4) and the others elements are the content of the array.
+
+```java
+int[] A = new int[4];
+```
+
+![image-20200511135228135](assets/image-20200511135228135.png)
+
+An instance of a class is also a pointer to a table. The first element of the table is another pointer to a vitrual table which is used for dynamically dispatch. The rest elements of the table are the field members of the instance.
+
+```java
+class Base {
+  int x, y;
+  int Bar() { ... }
+  int Foo() { ... }
+}
+```
+
+![image-20200511135217105](assets/image-20200511135217105.png)
+
+When inherited from a base class, a class simply adds new field members to the table and modifies the vitural table conforming to the overriding rule. In the figure below, the differences between the drived class and the base class are highlighted in blue.
+
+```java
+class Derived extends Base {
+  int z;
+  int Bar() { ... }
+  int Fun() { ... }
+}
+```
+
+![image-20200511135235202](assets/image-20200511135235202.png)
+
+When the number of arguments exccedd 20, we have to find another way to pass the arguments because the Piglet interpreter support at most 20 arguments. Here is our solution. The first nineteen arguments are passed as usual, whereas others are stored in a new table. A pointer to the table is passed as the twentieth argument, as illustated in the figure.
+
+![image-20200511141736110](/Users/wck/CLionProjects/MiniJava-Compiler/assets/image-20200511141736110.png)
+
+### Evaluation
+
+Beacuse Minijava and Piglet have similar structrue, we couple the IR generation design with semantic analysis for the coding convenience and readability. The code snippet below demonstrate this.
+
+```java
+  /**
+	 * a.length
+	 * 
+	 * BEGIN HLOAD TEMP 1 a 0 RETURN TEMP 1 END
+	 **/
+public Type visit(final ArrayLength n) {
+  final String temp1 = e.newTemp();
+  e.emitOpen("/* .length */", "HLOAD", temp1);
+  final Type a = n.f0.accept(this);
+  e.emitBuf("0");
+  e.emitClose("RETURN", temp1, "END");
+  if (a instanceof ArrType) {
+    return new IntType();
+  } else {
+    Info.panic("ArrayLookup");
+    return null;
+  }
+}
+```
+
+As we see, this method accomplishes two tasks. First, we type check the variable that `.length` is applied to is of type `int[]`. Second, we generation the Piglet code to fetch the length field of the array.
+
+## IR Generation (2)
 
 ## Register Allocation
 
@@ -264,4 +339,13 @@ $$
 
 The priority value represents the gained performance if we don't spill this node.
 
+## Native Code Generation
 
+-------
+
+## References
+
+- [Gettysburg CS 374](http://cs.gettysburg.edu/~tneller/cs374/)
+- [Software and Documentation](http://compilers.cs.ucla.edu/cs132/setup.html)
+- [Standford cs143](https://web.stanford.edu/class/archive/cs/cs143/cs143.1128/lectures/17/Slides17.pdf)
+- _Modern Compiler Implementation in Java (2nd edition)_
