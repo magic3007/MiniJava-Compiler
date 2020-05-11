@@ -6,6 +6,29 @@ Implementation for the lesson Compiling Engineering (2020 Spring) in Peking Univ
 
 Adapted from [UCLA CS 132 Project](http://web.cs.ucla.edu/~palsberg/course/cs132/project.html).
 
+Table of Contents:
+
+   * [MiniJava-Compiler](#minijava-compiler)
+      * [Build and Testing](#build-and-testing)
+      * [Overview](#overview)
+      * [Semantics Analysis](#semantics-analysis)
+         * [Algorithm](#algorithm)
+         * [Evaluation](#evaluation)
+      * [IR Generation (1)](#ir-generation-1)
+         * [Algorithm](#algorithm-1)
+         * [Evaluation](#evaluation-1)
+      * [IR Generation (2)](#ir-generation-2)
+         * [Algorithm](#algorithm-2)
+         * [Evaluation](#evaluation-2)
+      * [Register Allocation](#register-allocation)
+         * [Algorithm](#algorithm-3)
+         * [Evaluation](#evaluation-3)
+         * [Future Work](#future-work)
+      * [Native Code Generation](#native-code-generation)
+         * [Algorithm](#algorithm-4)
+         * [Evaluation](#evaluation-4)
+      * [References](#references)
+
 ## Build and Testing
 
 That's easy! Just type these in your terminal:
@@ -112,7 +135,7 @@ class Derived extends Base {
 
 When the number of arguments exccedd 20, we have to find another way to pass the arguments because the Piglet interpreter support at most 20 arguments. Here is our solution. The first nineteen arguments are passed as usual, whereas others are stored in a new table. A pointer to the table is passed as the twentieth argument, as illustated in the figure.
 
-![image-20200511141736110](/Users/wck/CLionProjects/MiniJava-Compiler/assets/image-20200511141736110.png)
+![image-20200511141736110](assets/image-20200511141736110.png)
 
 ### Evaluation
 
@@ -141,7 +164,52 @@ public Type visit(final ArrayLength n) {
 
 As we see, this method accomplishes two tasks. First, we type check the variable that `.length` is applied to is of type `int[]`. Second, we generation the Piglet code to fetch the length field of the array.
 
+Our implementation output detailed comment on the Piglet code. This yields better readability and is much easier to debug. Below is a sample output.
+
+```
+MAIN
+	PRINT
+		CALL BEGIN
+			MOVE TEMP 201
+			/*new Fac */ BEGIN
+				MOVE TEMP 203 HALLOCATE 4
+				MOVE TEMP 204 HALLOCATE 4
+				HSTORE TEMP 203 0 TEMP 204
+				HSTORE TEMP 204 0 Fac_ComputeFac
+			RETURN TEMP 203 END
+			MOVE TEMP 205 10
+			HLOAD TEMP 202 TEMP 201 0
+			HLOAD TEMP 202 TEMP 202 0
+		RETURN TEMP 202 END (
+			TEMP 201
+			TEMP 205
+		)
+	/*PRINT*/
+END
+Fac_ComputeFac [ 2 ] BEGIN
+	/* if */ CJUMP LT TEMP 1 1 L101
+		MOVE TEMP 2 1
+	/* else */ JUMP L102
+		L101 MOVE TEMP 2 TIMES TEMP 1
+		CALL BEGIN
+			MOVE TEMP 206 TEMP 0 MOVE TEMP 208 MINUS TEMP 1 1
+			HLOAD TEMP 207 TEMP 206 0
+			HLOAD TEMP 207 TEMP 207 0
+		RETURN TEMP 207 END (
+			TEMP 206
+			TEMP 208
+		)
+	/* endif */ L102 NOOP
+RETURN
+	TEMP 2
+/* end Fac_ComputeFac */ END
+```
+
 ## IR Generation (2)
+
+### Algorithm
+
+### Evaluation
 
 ## Register Allocation
 
@@ -299,7 +367,7 @@ Tree_SetRight [2] [0] [0]
 END 
 ```
 
-We can see that our algorithm effectively uses the valuable registers.
+We can see that our algorithm efficiently uses the valuable registers.
 
 ### Future Work
 
@@ -340,6 +408,10 @@ $$
 The priority value represents the gained performance if we don't spill this node.
 
 ## Native Code Generation
+
+### Algorithm
+
+### Evaluation
 
 -------
 
