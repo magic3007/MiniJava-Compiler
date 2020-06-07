@@ -139,30 +139,30 @@ When the number of arguments exccedd 20, we have to find another way to pass the
 
 ### Evaluation
 
-Beacuse Minijava and Piglet have similar structrue, we couple the IR generation design with semantic analysis for the coding convenience and readability. The code snippet below demonstrate this.
+Beacuse Minijava and Piglet have similar structrue, we couple the IR generation design with semantic analysis for the coding convenience and readability. The code snippet below demonstrates our design.
 
 ```java
-  /**
-	 * a.length
-	 * 
-	 * BEGIN HLOAD TEMP 1 a 0 RETURN TEMP 1 END
-	 **/
+ /**
+ * a.length
+ * 
+ * BEGIN HLOAD TEMP 1 a 0 RETURN TEMP 1 END
+ **/
 public Type visit(final ArrayLength n) {
-  final String temp1 = e.newTemp();
-  e.emitOpen("/* .length */", "HLOAD", temp1);
-  final Type a = n.f0.accept(this);
-  e.emitBuf("0");
-  e.emitClose("RETURN", temp1, "END");
-  if (a instanceof ArrType) {
-    return new IntType();
-  } else {
-    Info.panic("ArrayLookup");
-    return null;
-  }
+	final String temp1 = e.newTemp();
+	e.emitOpen("/* .length */", "HLOAD", temp1);
+	final Type a = n.f0.accept(this);
+	e.emitBuf("0");
+	e.emitClose("RETURN", temp1, "END");
+	if (a instanceof ArrType) {
+		return new IntType();
+	} else {
+		Info.panic("ArrayLookup");
+		return null;
+	}
 }
 ```
 
-As we see, this method accomplishes two tasks. First, we type check the variable that `.length` is applied to is of type `int[]`. Second, we generation the Piglet code to fetch the length field of the array.
+As we see, this method accomplishes two core tasks. First, we type check the variable that `.length` is applied to is of type `int[]`. Second, we generation the Piglet code to fetch the length field of the array.
 
 Our implementation output detailed comment on the Piglet code. This yields better readability and is much easier to debug. Below is a sample output.
 
