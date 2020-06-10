@@ -275,7 +275,7 @@ If current return token type is not derived from the expected return token type,
     }
 ```
 
-Since we visit the AST in depth first order, as for recursive statement, we will emit its internal statement during on-the-fly translation.
+Since we visit the AST in depth first order, as for recursive statement, we will emit its internal statement firstly during on-the-fly translation.
 
 ## Register Allocation
 
