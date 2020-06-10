@@ -354,8 +354,8 @@ class PigletTranslator extends GJDepthFirst<Token, PigletTranslatorAugs> {
     }
 
     /**
-     * Piglet syntax: StmtExp ::= "BEGIN" StmtList "RETURN" Exp "END" Spuglet
-     * syntax: StmtExp ::= "BEGIN" StmtList "RETURN" SimpleExp "END"
+     * Piglet syntax:    StmtExp ::= "BEGIN" StmtList "RETURN" Exp "END"
+     * Spiglet syntax:   StmtExp ::= "BEGIN" StmtList "RETURN" SimpleExp "END"
      */
     public Token visit(StmtExp n, PigletTranslatorAugs argus) {
         Emitter e = argus.getEmitter();

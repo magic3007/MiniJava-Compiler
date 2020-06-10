@@ -89,8 +89,8 @@ The checker does the type checking in four passes:
 
 There are some corner cases that should be identified as `Type Error` when doing semantics analysis. We are going to list them here.
 
-1. Circular inheritance. With simple graph theoy, we can check whether a loop in the directed inheritance graph using Depth First Search tree within $O(n)$ time, where the $n$ is the number of classes.
-2. The overriden method has different return type.
+1. Circular inheritance. With simple graph theory, we can check whether a loop in the directed inheritance graph using Depth First Search tree within $O(n)$ time, where the $n$ is the number of classes.
+2. The overridden method has different return type.
 3. A temporary variable declared in a method body has the same name with one of the method argument names.
 
 ## IR Generation (1)
@@ -133,7 +133,7 @@ class Derived extends Base {
 
 ![image-20200511135235202](assets/image-20200511135235202.png)
 
-When the number of arguments exccedd 20, we have to find another way to pass the arguments because the Piglet interpreter support at most 20 arguments. Here is our solution. The first nineteen arguments are passed as usual, whereas others are stored in a new table. A pointer to the table is passed as the twentieth argument, as illustated in the figure.
+When the number of arguments excceded 20, we have to find another way to pass the arguments because the Piglet interpreter support at most 20 arguments. Here is our solution. The first nineteen arguments are passed as usual, whereas others are stored in a new table. A pointer to the table is passed as the twentieth argument, as illustated in the figure.
 
 ![image-20200511141736110](assets/image-20200511141736110.png)
 
@@ -207,9 +207,75 @@ RETURN
 
 ## IR Generation (2)
 
-### Algorithm
+### Task Overview
 
-### Evaluation
+In this task, we are going to transfer _Piglet_ into _Spiglet_, which is a subset of _Piglet_. _Spiglet_ is closer to three address code since it eliminates recursive code from _Piglet_.
+
+### _Spiglet_ Brief
+
+The grammar for _Spiglet_ differs from that of _Piglet_ in the following ways:
+
+-   The recursive expression is prohibited
+-   There are only four types of expression Exp:
+-   Simple expression `SimpleExp`, which consists of temporary variable `Temp`, integer literal `IntegerLiteral`, and label `Label`.
+-   Function calling `Call`
+-   Memory allocation `HAllocate`
+-   Binary operation `BinOp`
+-   Note that `StmtExp` is no longer an expression `Exp` in _Spiglet_. The main challenge in this task is to transfer `StmtExp` into a series of equivalent instructions.
+-   Only move statement `MoveStmt` can use expression `Exp` as a source. Printing statement `PrintStmt` uses simple expression `SimpleExp` as a source. Other statements use temporary variables for they resemble registers in the following section.
+
+### Solution
+
+Firstly, we scan the whole program and find the next available temporary variable index.
+	Secondly, we scan the whole abstract syntax tree in depth-first order. The difference from the common depth-first visitor is that, when visiting any node, a parameter is carried in to identify the expected return token for this node. Certainly, for some node types like Goal and `PrintStmt`, we don’t have expected return token. However, for other node types like `StmtExp`, we have an expected return token. The classification of the expected token is the same as that of `Exp`. For example, 
+
+```java
+/**
+* Piglet syntax: HLoadStmt ::= "HLOAD" Temp Exp IntegerLiteral 
+* Spiglet syntax: HLoadStmt ::= "HLOAD" Temp Temp IntegerLiteral
+*/
+public Token visit(HLoadStmt n, PigletTranslatorAugs argus) {
+        Emitter e = argus.getEmitter();
+        Token expectedToken = argus.getExpectedToken();
+        if (expectedToken == null) {
+            Token token1 = n.f1.accept(this, new PigletTranslatorAugs(e, new TempToken()));
+            Token token2 = n.f2.accept(this, new PigletTranslatorAugs(e, new TempToken()));
+            e.emitBuf(n.f0.toString(), token1.toString(), token2.toString(), n.f3.f0.toString());
+            return null;
+        }
+        Info.panic("Never reach here!");
+        return null;
+    }
+```
+
+If current return token type is not derived from the expected return token type, we should adjust the current node through a series of instructions and return the expected token. For example, we can leverage the move statement
+
+```java
+    public Token visit(HAllocate n, PigletTranslatorAugs argus) {
+        Emitter e = argus.getEmitter();
+        Token expectedToken = argus.getExpectedToken();
+        Token token1 = n.f1.accept(this, new PigletTranslatorAugs(e, new SimpleExpToken()));
+        StringBuffer buf = new StringBuffer();
+        buf.append("HALLOCATE", token1.toString());
+        if (expectedToken == null) {
+            e.emit(buf.toString());
+            return null;
+        } else if (expectedToken.getClass().isAssignableFrom(HAllocateToken.class)) {
+            return new HAllocateToken(buf.toString());
+        } else {
+            /**
+             * MOVE TEMP 1 HALLOCATE SimpleExp
+             */
+            Token rv = new TempToken(e.newTemp());
+            buf.prepend(rv.toString());
+            buf.prepend("MOVE");
+            e.emit(buf.toString());
+            return rv;
+        }
+    }
+```
+
+Since we visit the AST in depth first order, as for recursive statement, we will emit its internal statement during on-the-fly translation.
 
 ## Register Allocation
 
