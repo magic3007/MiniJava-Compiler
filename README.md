@@ -8,26 +8,27 @@ Adapted from [UCLA CS 132 Project](http://web.cs.ucla.edu/~palsberg/course/cs132
 
 Table of Contents:
 
-   * [MiniJava-Compiler](#minijava-compiler)
-      * [Build and Testing](#build-and-testing)
-      * [Overview](#overview)
-      * [Semantics Analysis](#semantics-analysis)
-         * [Algorithm](#algorithm)
-         * [Evaluation](#evaluation)
-      * [IR Generation (1)](#ir-generation-1)
-         * [Algorithm](#algorithm-1)
-         * [Evaluation](#evaluation-1)
-      * [IR Generation (2)](#ir-generation-2)
-         * [Algorithm](#algorithm-2)
-         * [Evaluation](#evaluation-2)
-      * [Register Allocation](#register-allocation)
-         * [Algorithm](#algorithm-3)
-         * [Evaluation](#evaluation-3)
-         * [Future Work](#future-work)
-      * [Native Code Generation](#native-code-generation)
-         * [Algorithm](#algorithm-4)
-         * [Evaluation](#evaluation-4)
-      * [References](#references)
+- [MiniJava-Compiler](#minijava-compiler)
+  * [Build and Testing](#build-and-testing)
+  * [Overview](#overview)
+  * [Semantics Analysis](#semantics-analysis)
+    + [Algorithm](#algorithm)
+    + [Evaluation](#evaluation)
+  * [IR Generation (1)](#ir-generation--1-)
+    + [Algorithm](#algorithm-1)
+    + [Evaluation](#evaluation-1)
+  * [IR Generation (2)](#ir-generation--2-)
+    + [Task Overview](#task-overview)
+    + [_Spiglet_ Brief](#-spiglet--brief)
+    + [Solution](#solution)
+  * [Register Allocation](#register-allocation)
+    + [Algorithm](#algorithm-2)
+    + [Evaluation](#evaluation-2)
+    + [Future Work](#future-work)
+  * [Native Code Generation](#native-code-generation)
+    + [System Call](#system-call)
+    + [Stack Maintenance](#stack-maintenance)
+  * [References](#references)
 
 ## Build and Testing
 
@@ -475,9 +476,91 @@ The priority value represents the gained performance if we don't spill this node
 
 ## Native Code Generation
 
-### Algorithm
+In this task, we are going to transfer IR representation *Kanga* into assembly language *MIPS*. There are two main challenges in this task: system call(`HALLOCATE`, `PRINT`, `ERROR`)and stack maintenance. We will explain the respective solutions towards these challenges in the following sections.
 
-### Evaluation
+### System Call
+
+There are three types of instructions in *Kanga* that must be implemented by system call, namely heap memory allocation `HALLOCATE`, printing instruction `PRINT` and error instruction `ERROR`. Generally, the function number and the parameter of the system call are specified by register `v0` and `a0` respectively. Meanwhile, the return value is stored in register `v0` if any. 
+
+| Function             | Function Number `v0` | Parameter                                        | Return Value                             |
+| -------------------- | -------------------- | ------------------------------------------------ | ---------------------------------------- |
+| Print Integer        | 1                    | `a0` = integer to be printed                     | N/A                                      |
+| Print String         | 4                    | `a0` = first address of the string to be printed | N/A                                      |
+| Allocate Heap Memory | 9                    | `a0` = number of bytes to be allocated           | `v0` = first address of allocated memory |
+| Exit                 | 10                   | N/A                                              | N/A                                      |
+
+In our implementation, these system calls are wrapped into procedures:
+
+```assembly
+	.text 
+	.globl _halloc 
+_halloc : 
+	li $v0, 9 
+	syscall 
+	j $ra 
+
+ 
+	.text 
+	.globl _print 
+_print : 
+	li $v0, 1 
+	syscall 
+	la $a0, newl 
+	li $v0, 4 
+	syscall 
+	j $ra 
+
+ 
+	.text 
+	.globl _error 
+_error : 
+	la $a0, str_er 
+	li $v0, 4 
+	syscall 
+	li $v0, 10 
+	syscall 
+
+ 
+	.data 
+	.align   0 
+newl : 
+	.asciiz "\n" 
+
+ 
+	.data 
+	.align   0 
+str_er : 
+	.asciiz " ERROR: abnormal termination\n" 
+```
+
+### Stack Maintenance
+
+The layout of stack frame is:
+
+![image-20200612234843059](./README.assets/image-20200612234843059.png)
+
+Note that when a procedure is called, its number of spilled parameters is still unknown. Therefore, for the convenience of generating code, the spilled parameters is stored in reversed order.
+
+Take the procedure `Fac_ComputeFac [2][3][2]` as an example, when entering this procedure:
+
+```assembly
+	.text 
+	.globl Fac_ComputeFac 
+Fac_ComputeFac : 
+	sw $fp, -8($sp) 
+	move $fp, $sp 
+	subu $sp, $sp, 20 
+	sw $ra, -4($fp) 
+```
+
+When leaving this procedure:
+
+```assembly
+	lw $ra, -4($fp) 
+	lw $fp, 12($sp) 
+	addu $sp, $sp, 20 
+	j $ra 
+```
 
 -------
 
