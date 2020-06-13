@@ -12,6 +12,7 @@ Table of Contents:
   * [Getting Started](#getting-started)
     + [Prerequisites](#prerequisites)
       - [Ubuntu 18.04](#ubuntu-1804)
+    + [Build and Testing](#build-and-testing)
   * [Overview](#overview)
   * [Semantics Analysis](#semantics-analysis)
     + [Algorithm](#algorithm)
@@ -36,7 +37,7 @@ Table of Contents:
 
 ### Prerequisites
 
-- [spim](): a self-contained simulator that runs MIPS32 programs
+- [spim](http://spimsimulator.sourceforge.net/): a self-contained simulator that runs MIPS32 programs
 - *Java* with version >= 8
 
 #### Ubuntu 18.04
@@ -45,7 +46,7 @@ Table of Contents:
 apt install -y spim default-jre default-jdk
 ```
 
-Build and Testing
+### Build and Testing
 
 That's easy! Just type these in your terminal:
 
