@@ -370,7 +370,9 @@ class PigletTranslator extends GJDepthFirst<Token, PigletTranslatorAugs> {
         } else {
             n.f1.accept(this, new PigletTranslatorAugs(e, null));
             Token token3 = n.f3.accept(this, argus);
-            return token3;
+            Token rv =new TempToken(e.newTemp());
+            e.emit("MOVE", rv.toString(), token3.toString());
+            return rv;
         }
     }
 
