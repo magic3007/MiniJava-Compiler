@@ -205,6 +205,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		selfMethod = selfClass.getMethodByName("main");
 		node.f15.accept(this);
 		e.emitClose("END");
+		e.emit("/* memset(start, length) */ __memset [2] BEGIN MOVE TEMP 100 0 __memset_L2 NOOP CJUMP LT TEMP 100 TEMP 1 __memset_L1 /* i < length */ HSTORE TEMP 0 0 0 MOVE TEMP 0 PLUS TEMP 0 1 MOVE TEMP 100 PLUS TEMP 100 1 JUMP __memset_L2 __memset_L1 NOOP RETURN 0 END");
 		return null;
 	}
 
@@ -321,7 +322,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	 */
 	public Type visit(final ArrayLength n) {
 		final String temp1 = e.newTemp();
-		e.emitOpen("/* .length */", "HLOAD", temp1);
+		e.emitOpen("/* .length */", "BEGIN", "HLOAD", temp1);
 		final Type a = n.f0.accept(this);
 		e.emitBuf("0");
 		e.emitClose("RETURN", temp1, "END");
@@ -493,6 +494,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 	public Type visit(final ArrayAllocationExpression n) {
 		final String temp1 = e.newTemp();
 		final String temp2 = e.newTemp();
+		final String temp3 = e.newTemp();
 		e.emitOpen("BEGIN", "/* new int[] */");
 		e.emitBuf("MOVE", temp1);
 		final Type a = n.f3.accept(this);
@@ -501,6 +503,7 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		}
 		e.emitFlush();
 		e.emit("MOVE", temp2, "HALLOCATE", "TIMES", e.numToOffset(1), "PLUS", "1", temp1);
+		e.emit("MOVE", temp3, "CALL", "__memset", "(", temp2, temp1, ")");
 		e.emit("HSTORE", temp2, "0", temp1);
 		e.emitClose("RETURN", temp2, "END");
 
@@ -521,9 +524,11 @@ class GetExpressionType extends AbstractGetExpressionType<Type> {
 		final String temp1 = e.newTemp();
 		final String temp2 = e.newTemp();
 		e.emitOpen("/*new", name, "*/", "BEGIN");
-		e.emit("MOVE", temp1, "HALLOCATE",
-				// plus one for virtual table
-				e.numToOffset(type.sizeOfClass() + 1));
+
+		// plus one for virtual table
+		final String field_size = e.numToOffset(type.sizeOfClass() + 1);
+		e.emit("MOVE", temp1, "HALLOCATE", field_size);
+		e.emit("MOVE", temp2, "CALL", "__memset", "(", temp1, field_size, ")");
 		e.emit("MOVE", temp2, "HALLOCATE", e.numToOffset(type.sizeOfTable()));
 		e.emit("HSTORE", temp1, "0", temp2);
 		for (final ClassType.Method method : type.dynamicMethods) {
