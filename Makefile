@@ -144,9 +144,9 @@ endef
 		$(JAVA) -cp $(OUT) P2S < $< > $(TEMP_DIR)/dump.$@.spg && \
 		false; \
 	fi
-	@$(JAVA) -jar $(PGI) < $< > $(TEMP_DIR)/std.$@.output
-	@$(JAVA) -cp $(OUT) P2S < $< | $(JAVA) -jar $(PGI) > $(TEMP_DIR)/my.$@.output
-	@diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
+	@$(JAVA) -jar $(PGI) < $< > $(TEMP_DIR)/std.$@.output; \
+	$(JAVA) -cp $(OUT) P2S < $< | $(JAVA) -jar $(PGI) > $(TEMP_DIR)/my.$@.output; \
+	diff $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
 	if [ $$? -eq 0 ]; then \
 		echo "[   P2S   ] passed!" $<; \
 		rm $(TEMP_DIR)/std.$@.output $(TEMP_DIR)/my.$@.output; \
