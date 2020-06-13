@@ -38,7 +38,7 @@ Table of Contents:
 ### Prerequisites
 
 - [spim](http://spimsimulator.sourceforge.net/): a self-contained simulator that runs MIPS32 programs
-- *Java* with version >= 8
+- *Java* JDK with version >= 11
 
 #### Ubuntu 18.04
 
