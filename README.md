@@ -9,7 +9,9 @@ Adapted from [UCLA CS 132 Project](http://web.cs.ucla.edu/~palsberg/course/cs132
 Table of Contents:
 
 - [MiniJava-Compiler](#minijava-compiler)
-  * [Build and Testing](#build-and-testing)
+  * [Getting Started](#getting-started)
+    + [Prerequisites](#prerequisites)
+      - [Ubuntu 18.04](#ubuntu-1804)
   * [Overview](#overview)
   * [Semantics Analysis](#semantics-analysis)
     + [Algorithm](#algorithm)
@@ -30,11 +32,25 @@ Table of Contents:
     + [Stack Maintenance](#stack-maintenance)
   * [References](#references)
 
-## Build and Testing
+## Getting Started
+
+### Prerequisites
+
+- [spim](): a self-contained simulator that runs MIPS32 programs
+- *Java* with version >= 8
+
+#### Ubuntu 18.04
+
+```bash
+apt install -y spim default-jre default-jdk
+```
+
+Build and Testing
 
 That's easy! Just type these in your terminal:
 
 ```bash
+./configure
 make && make build
 ```
 
