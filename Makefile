@@ -70,7 +70,7 @@ TEST_KGI_DIR = testcases/kanga
 TEST_KGI	 = $(wildcard $(TEST_KGI_DIR)/*.kg)
 	
 test: testtc testmj testpg testmj2spg testkg testmj2kg testmp testmj2mp
-	@echo Congrats! You have passed all the test.
+	@echo Congrats! You have passed all the tests.
 
 testtc: $(patsubst $(TEST_TC_DIR)/%.java, %.testtc, $(TEST_TC))
 testmj: $(patsubst $(TEST_MJ_DIR)/%.java, %.testmj, $(TEST_MJ))
