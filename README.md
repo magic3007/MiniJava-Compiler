@@ -285,6 +285,8 @@ The grammar for _Spiglet_ differs from that of _Piglet_ in the following ways:
 
 -   Here we summarize all the BNFs that are different in *Piglet* and *Spiglet*:
 
+    
+    
     | Piglet                                                       | *Spiglet*                                             |
     | ------------------------------------------------------------ | ----------------------------------------------------- |
     | CJumpStmt ::= "CJUMP" Exp Label                              | CJumpStmt ::= "CJUMP" Temp Label                      |
@@ -297,6 +299,8 @@ The grammar for _Spiglet_ differs from that of _Piglet_ in the following ways:
     | HAllocate ::= "HALLOCATE" Exp                                | HAllocate ::= "HALLOCATE" SimpleExp                   |
     | BinOp ::= Operator Exp Exp                                   | BinOp ::= Operator Temp SimpleExp                     |
     |                                                              | SimpleExp ::= Temp \| IntegerLiteral \| Label         |
+    
+    
     From this chart, we can see only move statement `MoveStmt` can use expression `Exp` as a source. Printing statement `PrintStmt` uses simple expression `SimpleExp` as a source. Other statements use temporary variables for they resemble registers in the following section.
 
 ### Solution
@@ -717,7 +721,7 @@ In this task, we are going to transfer IR representation *Kanga* into assembly l
 
 ### System Call
 
-There are three types of instructions in *Kanga* that must be implemented by system call, namely heap memory allocation `HALLOCATE`, printing instruction `PRINT` and error instruction `ERROR`. Generally, the function number and the parameter of the system call are specified by register `v0` and `a0` respectively. Meanwhile, the return value is stored in register `v0` if any. 
+There are three types of instructions in *Kanga* that must be implemented by system call, namely heap memory allocation `HALLOCATE`, printing instruction `PRINT` and error instruction `ERROR`. Generally, the function number and the parameter of the system call are specified by register `v0` and `a0` respectively. Meanwhile, the return value is stored in register `v0` if any.
 
 | Function             | Function Number `v0` | Parameter                                        | Return Value                             |
 | -------------------- | -------------------- | ------------------------------------------------ | ---------------------------------------- |
@@ -725,8 +729,6 @@ There are three types of instructions in *Kanga* that must be implemented by sys
 | Print String         | 4                    | `a0` = first address of the string to be printed | N/A                                      |
 | Allocate Heap Memory | 9                    | `a0` = number of bytes to be allocated           | `v0` = first address of allocated memory |
 | Exit                 | 10                   | N/A                                              | N/A                                      |
-
-In our implementation, these system calls are wrapped into procedures:
 
 ```assembly
 	.text 
@@ -770,13 +772,31 @@ str_er :
 	.asciiz " ERROR: abnormal termination\n" 
 ```
 
+In our implementation, these system calls are wrapped into procedures. For example, `ERROR` instruction is translated into
+
+```assembly
+la $a0, str_er 	# the first address of error string
+li $v0, 4	    # function number(Print String)
+syscall
+li $v0, 10      # function number(Exit)
+syscall
+```
+
 ### Stack Maintenance
+
+An interesting question about stack maintenance is the the order of  spilled parameters stored in stack from low address to high address.
+
+> Should we store the spilled parameters in order from lower address to higher address?
+
+Note that the spilled parameters are passed vis `PassArgStmt` before `CallStmt`. According to <u>halting problem</u>, actually we have no idea what is the following running continuation after `PassArgStmt`, so we actually couldn’t find which `CallStmt` this spilled parameter is passed into, let alone the totally number of the spilled parameters of the called procedure. 
+
+Therefore, it is unreasonable to store the the spilled parameters in order from lower address to higher address. The spilled parameters should stored in reversed order as in following illustration.
 
 The layout of stack frame is:
 
 ![image-20200612234843059](./README.assets/image-20200612234843059.png)
 
-Note that when a procedure is called, its number of spilled parameters is still unknown. Therefore, for the convenience of generating code, the spilled parameters is stored in reversed order.
+
 
 Take the procedure `Fac_ComputeFac [2][3][2]` as an example, when entering this procedure:
 
