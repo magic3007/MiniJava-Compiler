@@ -103,12 +103,52 @@ The checker does the type checking in four passes:
 3. Collect all the methods and their signatures.
 4. Traverse the AST to compute the type of each expression. In the same pass, the checker also check every type constrain.
 
+Although MiniJava is a subset of Java, some programs that pass our typecheck can not pass the Java compiler because of the error "variable might not have been initialized". This is because Java has the rule to initialize the local variable before accessing or using them and this is checked at compile time, but our Minijava does not take such constrain into account. In this project, we choose to ignore that error. In fact, to detect uninitialized variable, we have to do the **control-flow analysis** (CFA), which is the major work of Part  4.
+
+Our type structure is illustrated below.
+
+- class Type
+  - class PrimitiveType
+    - class BoolType
+    - class IntType
+    - class ArrType
+    - class VoidType
+  - class ClassType
+- class Method
+- class StaticMethod
+
+To check whether "type A matches with type B", we use the `typeCastCheck` function.
+
+```java
+class Type {
+	static void typeCastCheck(final Type from, final Type to) {
+		if (from instanceof PrimitiveType) {
+			if (!from.getClass().equals(to.getClass())) {
+				Info.panic("incompatible primitive type " + from + " -> " + to);
+			}
+		} else if (to instanceof PrimitiveType) {
+			Info.panic("cast ClassType to PrimitiveType " + from + " -> " + to);
+		} else {
+			ClassType a = (ClassType) from;
+			final ClassType b = (ClassType) to;
+			while (a != null) {
+				if (a.name.equals(b.name)) {
+					return;
+				}
+				a = a.superclass;
+			}
+			Info.panic("cast to derived class failed " + from + " -> " + to);
+		}
+	}
+}
+```
+
 ### Evaluation
 
-There are some corner cases that should be identified as `Type Error` when doing semantics analysis. We are going to list them here.
+There are some corner cases that should be identified as `Type Error` when doing the semantics analysis. We are going to list them here.
 
 1. Circular inheritance. With simple graph theory, we can check whether a loop in the directed inheritance graph using Depth First Search tree within $O(n)$ time, where the $n$ is the number of classes.
-2. The overridden method has different return type.
+2. The overriding method has a different return type.
 3. A temporary variable declared in a method body has the same name with one of the method argument names.
 
 ## IR Generation (1)
