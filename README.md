@@ -234,18 +234,156 @@ In this task, we are going to transfer _Piglet_ into _Spiglet_, which is a subse
 The grammar for _Spiglet_ differs from that of _Piglet_ in the following ways:
 
 -   The recursive expression is prohibited
--   There are only four types of expression Exp:
--   Simple expression `SimpleExp`, which consists of temporary variable `Temp`, integer literal `IntegerLiteral`, and label `Label`.
--   Function calling `Call`
--   Memory allocation `HAllocate`
--   Binary operation `BinOp`
+
+-   There are only four types of expression `Exp`:
+    -   Simple expression `SimpleExp`, which consists of temporary variable `Temp`, integer literal `IntegerLiteral`, and label `Label`.
+    -   Function calling `Call`
+    -   Memory allocation `HAllocate`
+    -   Binary operation `BinOp`
+
 -   Note that `StmtExp` is no longer an expression `Exp` in _Spiglet_. The main challenge in this task is to transfer `StmtExp` into a series of equivalent instructions.
--   Only move statement `MoveStmt` can use expression `Exp` as a source. Printing statement `PrintStmt` uses simple expression `SimpleExp` as a source. Other statements use temporary variables for they resemble registers in the following section.
+
+-   Here we summarize all the BNFs that are different in *Piglet* and *Spiglet*:
+
+    | Piglet                                                       | *Spiglet*                                             |
+    | ------------------------------------------------------------ | ----------------------------------------------------- |
+    | CJumpStmt ::= "CJUMP" Exp Label                              | CJumpStmt ::= "CJUMP" Temp Label                      |
+    | HStoreStmt ::= "HSTORE" Exp IntegerLiteral Exp               | HStoreStmt ::= "HSTORE" Temp IntegerLiteral Exp       |
+    | HLoadStmt := "HLOAD" Temp Exp IntegerLiteral                 | HLoadStmt := "HLOAD" Temp Temp IntegerLiteral         |
+    | PrintStmt ::= "PRINT" Exp                                    | PrintStmt ::= "PRINT" SimpleExp                       |
+    | Exp ::= StmtExp \| Call \| HAllocate \| BinOp \| Temp \| IntegerLiteral \| Label | Exp ::= Call \| HAllocate \| BinOp \| SimpleExp       |
+    | StmtExp ::= "BEGIN" StmtList "RETURN" Exp "END"              | StmtExp ::= "BEGIN" StmtList "RETURN" SimpleExp "END" |
+    | Call ::= "CALL" Exp "(" ( Exp )* ")"                         | Call ::= "CALL" SimpleExp "(" ( Temp )* ")"           |
+    | HAllocate ::= "HALLOCATE" Exp                                | HAllocate ::= "HALLOCATE" SimpleExp                   |
+    | BinOp ::= Operator Exp Exp                                   | BinOp ::= Operator Temp SimpleExp                     |
+    |                                                              | SimpleExp ::= Temp \| IntegerLiteral \| Label         |
+    From this chart, we can see only move statement `MoveStmt` can use expression `Exp` as a source. Printing statement `PrintStmt` uses simple expression `SimpleExp` as a source. Other statements use temporary variables for they resemble registers in the following section.
 
 ### Solution
 
-Firstly, we scan the whole program and find the next available temporary variable index.
-	Secondly, we scan the whole abstract syntax tree in depth-first order. The difference from the common depth-first visitor is that, when visiting any node, a parameter is carried in to identify the expected return token for this node. Certainly, for some node types like Goal and `PrintStmt`, we don’t have expected return token. However, for other node types like `StmtExp`, we have an expected return token. The classification of the expected token is the same as that of `Exp`. For example, 
+Firstly, since we may use new temporary variables, we scan the whole program and find the next available temporary variable index.
+	Secondly, we scan the whole abstract syntax tree again. In this pass, the main challenge is that at any node whose BNF consists of `Exp`, we should judge whether this `Exp` should be transform to `SimpleExp` or `TEMP`. If so, we should leverage `MOVE` statement to transfer the result of this `Exp` into newly added temporary variable, and the replace the this `Exp` in original statement by this new temporary variable. 
+
+In our implementation, we scan the whole abstract tree in depth-first order. The difference from the common depth-first visitor is that, when visiting any node, a parameter is carried in to identify <u>the expected return token</u> of this node. Certainly, for some node types like Goal and `PrintStmt`, we don’t have expected return token. However, for other node types like `StmtExp`, we have an expected return token. 
+
+To be specified, all the tokens are derived from an interface with method `ToString()`, which return the corresponding string form of the token. The classification of the expected token is the same as that of `Exp`. 
+
+- Token
+  - ExpToken
+    - SimpleExpToken
+      - TempToken
+      - IntegerLiteralToken
+      - LabelToken
+    - CallToken
+    - HAllocateToken
+    - BinOpToken
+
+```java
+/**
+ * Spiglet Token
+ */
+interface Token {
+    public String toString();
+}
+
+class ExpToken implements Token {
+}
+
+class SimpleExpToken extends ExpToken {
+}
+
+class CallToken extends ExpToken {
+    String tokenImage;
+
+    CallToken(String tokenImage) {
+        this.tokenImage = tokenImage;
+    }
+
+    public String toString() {
+        return tokenImage;
+    }
+}
+
+class HAllocateToken extends ExpToken {
+    String tokenImage;
+
+    HAllocateToken(String tokenImage) {
+        this.tokenImage = tokenImage;
+    }
+
+    public String toString() {
+        return tokenImage;
+    }
+
+}
+
+class BinOpToken extends ExpToken {
+    String tokenImage;
+
+    BinOpToken(String tokenImage) {
+        this.tokenImage = tokenImage;
+    }
+
+    public String toString() {
+        return tokenImage;
+    }
+}
+
+class TempToken extends SimpleExpToken {
+    String tokenImage;
+
+    TempToken() {
+    }
+
+    TempToken(String tokenImage) {
+        this.tokenImage = tokenImage;
+    }
+
+    TempToken(Temp n) {
+        this.tokenImage = "TEMP " + n.f1.f0.toString();
+    }
+
+    public String toString() {
+        return tokenImage;
+    }
+}
+
+class IntegerLiteralToken extends SimpleExpToken {
+    int integerLiteral;
+
+    IntegerLiteralToken(IntegerLiteral n) {
+        this.integerLiteral = Integer.parseInt(n.f0.toString());
+    }
+
+    public String toString() {
+        return Integer.toString(integerLiteral);
+    }
+}
+
+class LabelToken extends SimpleExpToken {
+    String label;
+
+    LabelToken() {
+    }
+
+    LabelToken(String label) {
+        this.label = label;
+    }
+
+    LabelToken(Label n) {
+        this.label = n.f0.toString();
+    }
+
+    public String toString() {
+        return label;
+    }
+}
+```
+
+Take `HLoadStmt` statement as an example. The BNFs of `HLoadStmt` in these two IR are:
+
+- Piglet syntax `HLoadStmt ::= "HLOAD" Temp Exp IntegerLiteral `
+- Spiglet syntax `HLoadStmt ::= "HLOAD" Temp Temp IntegerLiteral `
 
 ```java
 /**
@@ -266,7 +404,16 @@ public Token visit(HLoadStmt n, PigletTranslatorAugs argus) {
     }
 ```
 
-If current return token type is not derived from the expected return token type, we should adjust the current node through a series of instructions and return the expected token. For example, we can leverage the move statement
+In above code snippet, `n` refers to current `HLoadStmt` Node in AST. We expect the `n.f1` to be an temporary variable, so we visit `n.f1` with parameters `new PigletTranslatorAugs(e, new TempToken())`. The same goes for `n.f2`.
+
+```java
+Token token1 = n.f1.accept(this, new PigletTranslatorAugs(e, new TempToken()));
+Token token2 = n.f2.accept(this, new PigletTranslatorAugs(e, new TempToken()));
+```
+
+Then we call the `ToString()` method of the return token `token1` and `token2`, without knowing whether the corresponding subtree in AST is `Temp` or not. Note that the transfer have been emitted during the visit to the subtree. 
+
+Let's see what happens when the expected return token is different from the current type. If current return token type is not derived from the expected return token type, we should adjust the current node through a series of instructions and return the expected token by the move statement. For example, when visiting `Hallocate` node,
 
 ```java
     public Token visit(HAllocate n, PigletTranslatorAugs argus) {
@@ -292,6 +439,39 @@ If current return token type is not derived from the expected return token type,
         }
     }
 ```
+
+- If no expected return token, return `null`:
+
+  ```java
+  if (expectedToken == null) {
+              e.emit(buf.toString());
+              return null;
+          }
+  ```
+
+- if the expected return token is derived from `HallocateToken`, return `HallocateToken` directly.
+
+  ```java
+   else if (expectedToken.getClass().isAssignableFrom(HAllocateToken.class)) {
+              return new HAllocateToken(buf.toString());
+   }
+  ```
+  
+- Otherwise, we leverage `MOVE` statement to transfer the result of this `Exp` into newly added temporary variable, and return the this newly added temporary variable.
+
+    ```java
+    else {
+                /**
+                 * MOVE TEMP 1 CAll SimpleExp (...)
+                 */
+                Token rv = new TempToken(e.newTemp());
+                buf.prepend(rv.toString());
+                buf.prepend("MOVE");
+                e.emit(buf.toString());
+                return rv;
+            }
+    ```
+
 
 Since we visit the AST in depth first order, as for recursive statement, we will emit its internal statement firstly during on-the-fly translation.
 
