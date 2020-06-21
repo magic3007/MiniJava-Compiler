@@ -67,10 +67,55 @@ The works are divided into five parts, each of which is a homework of the course
 4. Register allocation: compile a Spiglet program to Kanga
 5. Native code generation: compile a Kanga program to MIPS
 
-Below are the tools used in this project. The binaries are under `/deps` folder.
+Below are the tools used in this project. The jar files are under the `/deps` folder.
 
-- [JavaCC](https://javacc.github.io/javacc/): an open-source parser generator and lexical analyzer generator written in the Java
-- [JTB](http://compilers.cs.ucla.edu/jtb/): a syntax tree builder to be used with JavaCC
+### [JavaCC](https://javacc.github.io/javacc/)
+
+JavaCC is an open-source parser generator and lexical analyzer generator written in the Java. It allows the use of more general grammars, although left-recursion is disallowed. 
+
+In fact, other tools like [Lex](https://en.wikipedia.org/wiki/Lex_(software)) can do the same work. But JavaCC works better with Java applications.
+
+### [JTB](http://compilers.cs.ucla.edu/jtb/)
+
+JTB is a syntax tree builder to be used with JavaCC. It proviodes a more convenient way to write lexical specification and the grammar specification.
+
+What is more, JTB will generate a set of syntax tree classes based on the productions in the grammar. This is the killer feature of JTB. The classes utilize the Visitor design pattern and allows us to traverse the abstrct syntax tree with ease. The code below scans the code to find out all the class names in a MiniJava program. It only takes a few lines because the generated `Vistor` classes do most of the dirty work behind the scene.
+
+```java
+class ScanForClassName<T extends ClassCollection> extends GJVoidDepthFirst<T> {
+	public void visit(final ClassDeclaration node, final T classes) {
+		// the class name
+		classes.add(node.f1.f0.tokenImage);
+	}
+
+	public void visit(final ClassExtendsDeclaration node, final T classes) {
+		// the class name
+		classes.add(node.f1.f0.tokenImage);
+	}
+
+	public void visit(final MainClass node, final T classes) {
+		classes.add(node.f1.f0.tokenImage);
+	}
+}
+```
+
+### PGI
+
+The Piglet interpreter.
+
+### SPP
+
+The Spiglet checker. It only checks whether a program is written in Spiglet. To evaluate a Spiglet program, use the Piglet interpreter `PGI`, because Spiglet is the subset of Piglet.
+
+### KGI
+
+The Kanga interpreter.
+
+### [Spim](http://spimsimulator.sourceforge.net/)
+
+SPIM is a self-contained simulator that runs MIPS32 programs. It runs on Microsoft Windows, Mac OS X, and Linux and provides simple debugger and minimal set of operating system services. In this project, we need to ask the operating system to print the result.   
+
+Note that SPIM does not execute binary (compiled) programs.
 
 -----------
 
@@ -195,6 +240,59 @@ When the number of arguments excceded 20, we have to find another way to pass th
 
 ![image-20200511141736110](assets/image-20200511141736110.png)
 
+In addition, we have to fill the uninitialized memory cells as zeros explicitily because the Piglet interpret forbid reading a memory cell until it is written to. To achieve this, we hard-code a `memset` function that will be appended to the generated result,
+
+```
+/* memset(start, length) */
+__memset [2] 
+BEGIN 
+  /* i = 0 */
+	MOVE TEMP 100 0 
+	__memset_L2 NOOP 
+	/* i < length */ 
+	CJUMP LT TEMP 100 TEMP 1 __memset_L1 
+	HSTORE TEMP 0 0 0 
+	MOVE TEMP 0 PLUS TEMP 0 4 
+	MOVE TEMP 100 PLUS TEMP 100 1 
+	JUMP __memset_L2 
+	__memset_L1 NOOP 
+RETURN 0 END
+```
+
+and use this function to make zero-filled memory cells. 
+
+```java
+/**
+	 * new a()
+	 * 
+	 * BEGIN MOVE TEMP 1 HALLOCATE $(size of a) MOVE TEMP 2 HALLOCATE $(size of
+	 * vitrual table) HSTORE TEMP 1 0 TEMP 2 HSTORE TEMP 2 0 $(method1) HSTORE TEMP
+	 * 2 4 $(method2) HSTORE TEMP 2 8 $(method3) ... RETURN TEMP 1 END
+	 */
+public Type visit(final AllocationExpression n) {
+  final String name = n.f1.f0.tokenImage;
+  final ClassType type = classes.get(name);
+
+  final String temp1 = e.newTemp();
+  final String temp2 = e.newTemp();
+  e.emitOpen("/*new", name, "*/", "BEGIN");
+
+  // plus one for virtual table
+  final int field_size = type.sizeOfClass() + 1;
+  e.emit("MOVE", temp1, "HALLOCATE", e.numToOffset(field_size));
+  e.emit("MOVE", temp2, "CALL", "__memset", "(", temp1, Integer.toString(field_size), ")");
+  e.emit("MOVE", temp2, "HALLOCATE", e.numToOffset(type.sizeOfTable()));
+  e.emit("HSTORE", temp1, "0", temp2);
+  for (final ClassType.Method method : type.dynamicMethods) {
+    e.emit("HSTORE", temp2, 
+           e.numToOffset(type.indexOfMethod(method.name)), method.getLabel());
+  }
+  e.emitClose("RETURN", temp1, "END");
+
+  return type;
+}
+```
+
 ### Evaluation
 
 Beacuse Minijava and Piglet have similar structrue, we couple the IR generation design with semantic analysis for the coding convenience and readability. The code snippet below demonstrates our design.
@@ -244,6 +342,7 @@ MAIN
 		)
 	/*PRINT*/
 END
+
 Fac_ComputeFac [ 2 ] BEGIN
 	/* if */ CJUMP LT TEMP 1 1 L101
 		MOVE TEMP 2 1
